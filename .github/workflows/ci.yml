@@ -24,6 +24,8 @@ jobs:
         run: rustup show
       - name: Install JavaScript dependencies
         run: npm ci
+      - name: Prepare pinned FFmpeg
+        run: npm run ffmpeg:prepare
       - name: Audit JavaScript dependencies
         run: npm audit --audit-level=high
       - name: Test and build frontend
