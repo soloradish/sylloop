@@ -200,9 +200,13 @@ $bump-echo-version 分析 main 并推荐 Echo Player 的下一个版本。
 
 `src-tauri/tauri.conf.json` 是产品版本的权威来源。`npm run version:set -- X.Y.Z` 会将其与 `package.json`、`package-lock.json`、`src-tauri/Cargo.toml` 和 `src-tauri/Cargo.lock` 同步。提交发布改动前运行 `npm run version:check`。
 
-发布 PR 合并且对应的 `main` CI 通过后，在该 `main` 提交上创建并推送 annotated `vX.Y.Z` tag。发布工作流会拒绝版本不一致、轻量 tag、未包含在 `main` 中的 tag，以及已经存在 GitHub Release 的版本。随后它会构建未签名的 NSIS 安装包，在 `windows-2022` 和 `windows-2025` 上静默安装、启动和卸载，并发布来自 `windows-2022` 的产物、SHA-256 校验和及 GitHub artifact attestation。
+所有改动都通过受必需检查 `CI / gate` 保护的 PR 进入 `main`。普通 PR 会运行完整的 Windows CI。标准的 `codex/release-vX.Y.Z` PR 只有在 diff 恰好包含同步后的应用版本字段和 `CHANGELOG.md` 时才走轻量路径；任何其他改动都会回退到完整检查。已通过检查的 PR 合并后不会在 `main` 上重复运行 CI。
 
-不要移动已发布 tag 或替换已发布附件。临时工作流故障可以针对未改变的 tag 重跑；如果必须修改源码，则准备下一个 patch 版本。
+CI 会恢复可信的 FFmpeg、Cargo 下载和 E2E 依赖缓存，但绝不依赖缓存命中来保证正确性。Rust toolchain、依赖锁文件或 `scripts/ffmpeg-lock.json` 发生变化后，在 `main` 上手动运行一次 CI workflow，以刷新默认分支缓存。
+
+发布 PR 合并后，在该 `main` 提交上创建并推送 annotated `vX.Y.Z` tag。发布工作流会拒绝版本不一致、轻量 tag、未包含在 `main` 中的 tag，以及已经存在 GitHub Release 的版本。随后它只在 `windows-2022` 上构建一次未签名的 NSIS 安装包，将下载得到的同一个安装包分别在 `windows-2022` 和 `windows-2025` 上静默安装、启动和卸载，并发布该产物、SHA-256 校验和及 GitHub artifact attestation。
+
+不要移动已发布 tag 或替换已发布附件。临时故障应使用 **Re-run failed jobs**，以复用已经成功的构建 job 及其安装包 artifact；如果必须修改源码，则准备下一个 patch 版本。
 
 ## 许可证
 

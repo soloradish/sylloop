@@ -200,9 +200,13 @@ The skill does not modify the repository until its exact version and analyzed co
 
 `src-tauri/tauri.conf.json` is the authoritative product version. `npm run version:set -- X.Y.Z` synchronizes it with `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock`. Run `npm run version:check` before committing release changes.
 
-After the release PR is merged and the resulting `main` CI run passes, create and push an annotated `vX.Y.Z` tag on that `main` commit. The release workflow rejects mismatched versions, lightweight tags, tags outside `main`, and versions that already have a GitHub Release. It then builds an unsigned NSIS installer, silently installs, launches, and uninstalls it on both `windows-2022` and `windows-2025`, and publishes the `windows-2022` artifact with SHA-256 checksums and GitHub artifact attestation.
+Every change enters `main` through a pull request protected by the required `CI / gate` check. Ordinary pull requests run the complete Windows CI suite. A standard `codex/release-vX.Y.Z` pull request takes the lightweight path only when its diff contains exactly the synchronized application-version fields and `CHANGELOG.md`; any other change falls back to the complete suite. Merging a checked pull request does not repeat CI on `main`.
 
-Never move a published tag or replace published assets. Re-run a transiently failed workflow against the unchanged tag; if the source must change, prepare the next patch version instead.
+CI restores trusted FFmpeg, Cargo-download, and E2E dependency caches but never depends on a cache hit. Run the CI workflow manually against `main` once after changing the Rust toolchain, dependency locks, or `scripts/ffmpeg-lock.json` to refresh the default-branch caches.
+
+After the release PR is merged, create and push an annotated `vX.Y.Z` tag on that `main` commit. The release workflow rejects mismatched versions, lightweight tags, tags outside `main`, and versions that already have a GitHub Release. It builds one unsigned NSIS installer on `windows-2022`, smoke-tests that same downloaded installer on both `windows-2022` and `windows-2025`, and publishes it with SHA-256 checksums and GitHub artifact attestation.
+
+Never move a published tag or replace published assets. Use **Re-run failed jobs** for a transient failure so successful build jobs and their installer artifact are reused. If the source must change, prepare the next patch version instead.
 
 ## License
 

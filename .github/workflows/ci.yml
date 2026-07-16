@@ -1,15 +1,47 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      kind: ${{ steps.change-kind.outputs.kind }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Classify the change
+        id: change-kind
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            kind=$(node scripts/classify-ci-change.mjs --base "$BASE_SHA" --head "$HEAD_SHA" --head-ref "$HEAD_REF")
+          else
+            kind=full
+          fi
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+      - name: Validate release metadata
+        if: steps.change-kind.outputs.kind == 'release-only'
+        run: npm run version:check
+
   windows-test:
+    needs: classify
+    if: needs.classify.outputs.kind == 'full'
     runs-on: windows-2022
     timeout-minutes: 60
     env:
@@ -20,6 +52,38 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Restore pinned FFmpeg
+        id: ffmpeg-cache
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            src-tauri/.cache/ffmpeg
+            src-tauri/resources
+          key: ffmpeg-${{ runner.os }}-${{ hashFiles('scripts/ffmpeg-lock.json') }}
+      - name: Restore Cargo downloads
+        id: cargo-download-cache
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-download-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            cargo-download-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-
+      - name: Restore E2E build dependencies
+        id: e2e-build-cache
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .e2e-target/debug/.fingerprint
+            .e2e-target/debug/build
+            .e2e-target/debug/deps
+          key: e2e-build-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            e2e-build-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-
       - name: Install Rust toolchain
         run: rustup show
       - name: Install JavaScript dependencies
@@ -51,6 +115,34 @@ jobs:
         run: npm run build:e2e
       - name: Run native Windows E2E tests
         run: npm run test:e2e:tauri
+      - name: Save pinned FFmpeg
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            src-tauri/.cache/ffmpeg
+            src-tauri/resources
+          key: ${{ steps.ffmpeg-cache.outputs.cache-primary-key }}
+      - name: Save Cargo downloads
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && steps.cargo-download-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ steps.cargo-download-cache.outputs.cache-primary-key }}
+      - name: Save E2E build dependencies
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && steps.e2e-build-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .e2e-target/debug/.fingerprint
+            .e2e-target/debug/build
+            .e2e-target/debug/deps
+          key: ${{ steps.e2e-build-cache.outputs.cache-primary-key }}
       - name: Upload E2E diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
@@ -61,3 +153,33 @@ jobs:
             logs/
           if-no-files-found: ignore
           retention-days: 7
+
+  gate:
+    needs: [classify, windows-test]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the applicable validation
+        shell: bash
+        env:
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          CHANGE_KIND: ${{ needs.classify.outputs.kind }}
+          WINDOWS_RESULT: ${{ needs.windows-test.result }}
+        run: |
+          if [[ "$CLASSIFY_RESULT" != "success" ]]; then
+            echo "Change classification or release metadata validation failed."
+            exit 1
+          fi
+          case "$CHANGE_KIND" in
+            full)
+              [[ "$WINDOWS_RESULT" == "success" ]] || exit 1
+              ;;
+            release-only)
+              [[ "$WINDOWS_RESULT" == "skipped" ]] || exit 1
+              ;;
+            *)
+              echo "Unknown change kind: $CHANGE_KIND"
+              exit 1
+              ;;
+          esac
