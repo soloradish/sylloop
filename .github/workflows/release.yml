@@ -59,8 +59,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view "$env:RELEASE_TAG" --repo "${{ github.repository }}" *> $null
-          if ($LASTEXITCODE -eq 0) {
+          $releaseTags = @(gh api --paginate "repos/${{ github.repository }}/releases?per_page=100" --jq '.[].tag_name')
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to query existing GitHub Releases."
+          }
+          if ($releaseTags -contains $env:RELEASE_TAG) {
             throw "A GitHub Release already exists for $env:RELEASE_TAG."
           }
 
