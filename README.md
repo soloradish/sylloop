@@ -1,67 +1,190 @@
+[简体中文](README.zh-CN.md)
+
 # Echo Player
 
-Echo Player 是一个专注于“再听一次”和快速循环的 Windows 语言学习播放器。v0.1.0 只处理本地媒体，不上传文件，也不包含遥测。
+Echo Player is a Windows desktop media player built for language-learning workflows that depend on quick replay and precise repetition. Version 0.1.0 works with local audio and video, generates a waveform and pause-based segments with FFmpeg, and provides several ways to repeat a segment or an arbitrary selection.
 
-## 功能
+## Highlights
 
-- 打开或拖放 MP4、M4V、WebM、MP3、M4A、AAC、WAV、FLAC 和 OGG。
-- 只读取所选文件及其同目录的支持格式文件，生成临时播放列表。
-- 使用内置 FFmpeg 在本机生成波形和基于停顿的片段。
-- 支持上一段、下一段、带前置缓冲的重听、整段循环、当前片段循环和波形 A–B 循环。
-- 支持 0.5×–2.0× 倍速、音量、全屏、段间停顿和四种界面语言。
+- Open or drag in MP4, M4V, WebM, MP3, M4A, AAC, WAV, FLAC, and OGG files.
+- Build a temporary playlist from supported files in the selected file's directory.
+- Generate waveforms and pause-based segments with the bundled FFmpeg analyzer.
+- Replay the current segment with preroll, move between segments, loop a segment or the full media, and create waveform A-B loops.
+- Adjust playback speed from 0.5x to 2.0x, volume, fullscreen mode, and the pause between loop iterations.
+- Use the interface in English, Simplified Chinese, Traditional Chinese, or French.
 
-播放列表不递归扫描子目录；媒体结束后停在当前文件，不会自动切换下一项。关闭应用后不会保留最近播放的文件，只保留音量、倍速、循环停顿和语言偏好。
+Playlist discovery is intentionally non-recursive. Reaching the end of a media file stops playback instead of advancing automatically. Across launches, the application retains only volume, speed, loop-gap, and language preferences.
 
-## 系统要求
+## Requirements
 
-- Windows 10 或 Windows 11
-- Microsoft Edge WebView2 Runtime（Windows 10/11 通常已包含）
+### Running the application
 
-正式安装包已经包含固定版本的 LGPL FFmpeg，不需要用户另行安装，也不包含代码签名。Windows 可能因此显示 SmartScreen 警告；请从项目的 GitHub Releases 获取安装包并核对 `SHA256SUMS.txt`。
+- Windows 10 or Windows 11
+- Microsoft Edge WebView2 Runtime, which is normally included with supported Windows versions
 
-## 本地开发
+Official installers include the pinned LGPL FFmpeg executable. They are currently unsigned, so Windows may display a SmartScreen warning. Obtain installers from [GitHub Releases](https://github.com/soloradish/echo-player/releases) and verify them with the published `SHA256SUMS.txt`.
 
-项目固定使用 Node.js 24.16.0 和 Rust 1.96.0。安装依赖后，FFmpeg 准备脚本会下载锁定的构建、校验 SHA-256，并拒绝 GPL/nonfree 配置。
+### Developing the application
+
+- Windows with the native build prerequisites required by Tauri 2
+- Node.js 24.16.0, pinned in `.nvmrc` and `package.json`
+- Rust 1.96.0 with `rustfmt` and `clippy`, pinned in `rust-toolchain.toml`
+- PowerShell for the repository scripts
+
+## Architecture
+
+| Layer | Technology | Responsibility |
+| --- | --- | --- |
+| Desktop shell | Tauri 2 | Window lifecycle, dialogs, asset access, packaging, and IPC |
+| User interface | React 19 + TypeScript | Player controls, waveform interaction, playlists, settings, and localization |
+| Client state | Zustand | Playback state, analysis state, loop state, playlist state, and persisted preferences |
+| Native backend | Rust | File validation, directory playlists, FFmpeg execution, cancellation, and the analysis cache |
+| Analyzer | FFmpeg | Decode media to 16 kHz audio for waveform and pause-based segment detection |
+| Tests | Vitest + WebdriverIO | Frontend behavior, Rust logic, and native Windows end-to-end coverage |
+
+### Media and analysis flow
+
+1. The React application receives a selected or dropped media path and calls the `open_media_context` Tauri command.
+2. Rust canonicalizes and validates the path, scans only its parent directory for supported media, and grants the asset protocol access to the resulting playlist.
+3. The WebView plays the selected asset while `analyze_audio` runs FFmpeg in a background task.
+4. Analysis progress is delivered through a Tauri channel. The final waveform and segments are accepted only if they still belong to the active request.
+5. Successful analysis results are cached under the application data directory. The versioned cache is capped at 512 MiB and evicts older entries when necessary.
+
+The native IPC surface is registered in `src-tauri/src/lib.rs` and currently contains:
+
+- `open_media_context`
+- `get_analysis_capability`
+- `analyze_audio`
+- `cancel_analysis`
+- `get_analysis_cache_stats`
+- `clear_analysis_cache`
+
+Rust response types use camelCase serialization to match their TypeScript counterparts in `src/types.ts`.
+
+## Project layout
+
+| Path | Purpose |
+| --- | --- |
+| `src/App.tsx` | Main player orchestration, media lifecycle, keyboard behavior, loops, and IPC calls |
+| `src/components/` | Waveform, settings, progress, icons, and error-boundary UI |
+| `src/store.ts` | Zustand store and persisted preference validation |
+| `src/i18n.tsx` | Locale detection, message catalogs, and localized formatting |
+| `src/lib/` | Pure playlist and segment helpers |
+| `src-tauri/src/lib.rs` | Tauri commands, FFmpeg analysis, caching, file access, and Rust tests |
+| `src-tauri/capabilities/` | Tauri permissions for the production application |
+| `scripts/` | FFmpeg preparation, E2E fixture generation, E2E builds, and installer smoke tests |
+| `e2e/` | Native Windows WebdriverIO configuration, capabilities, fixtures, and specifications |
+| `.github/workflows/` | Windows CI and tagged release workflows |
+
+Unit tests are colocated with the frontend modules they cover. Rust unit tests live in `src-tauri/src/lib.rs`, and native application tests live under `e2e/specs/`.
+
+## Getting started
+
+Install the pinned dependencies and prepare the locked FFmpeg build:
 
 ```powershell
 npm ci
 npm run ffmpeg:prepare
+```
+
+The FFmpeg preparation script downloads the artifact recorded in `scripts/ffmpeg-lock.json`, verifies its SHA-256 digest, and rejects GPL or nonfree builds.
+
+Start the native Tauri development application:
+
+```powershell
 npm run tauri:dev
 ```
 
-常用验证命令：
+## Development modes
+
+### Native Tauri development
+
+Use `npm run tauri:dev` for real file dialogs, drag and drop, asset permissions, media playback, and FFmpeg analysis. This is the normal development mode for behavior that crosses the React/Rust boundary.
+
+### Browser layout preview
+
+For quick UI work, run:
 
 ```powershell
-npm test
-npm run build
-npm audit --audit-level=high
-
-cd src-tauri
-cargo fmt --all -- --check
-cargo clippy --all-targets --locked -- -D warnings
-cargo test --locked
-cargo audit
+npm run dev
 ```
 
-浏览器布局预览可运行 `npm run dev` 并访问 `/?demo=1`。该模式不包含本地文件权限和真实音频分析。
+Then open `http://127.0.0.1:1420/?demo=1`. Add `&playing=1` to render the demo in its playing state. Demo mode provides deterministic media, waveform, segment, and playlist data, but it does not provide native file access or real FFmpeg analysis.
 
-## Windows 原生 E2E
+### Native Windows E2E
 
-端到端测试构建只在 `e2e` feature 下加入 WebDriver 插件；正式安装包不包含测试接口。
+The E2E build enables the WebDriver plugins only through the Rust `e2e` feature. Production builds do not include the test interface.
 
 ```powershell
 npm run build:e2e
 npm run test:e2e:tauri
 ```
 
-GitHub Actions 在托管的 `windows-2022` runner 上执行前端测试、Rust 测试、依赖审计和原生 Tauri E2E。标签发布工作流还会在 `windows-2022` 与 `windows-2025` 上静默安装、启动并卸载未签名的 NSIS 安装包，然后发布校验和与构建来源证明。
+`build:e2e` prepares FFmpeg and generated media fixtures before building the dedicated test application.
 
-## 发布
+## Command reference
 
-版本号必须同时保持在 `package.json`、`src-tauri/Cargo.toml` 和 `src-tauri/tauri.conf.json` 一致。全部 CI 门禁通过后再创建版本标签；推送 `v*` 标签会触发发布工作流。
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vite development server |
+| `npm run tauri:dev` | Start the native development application |
+| `npm test` | Run all Vitest frontend tests once |
+| `npm run build` | Type-check and build the frontend |
+| `npm run ffmpeg:prepare` | Download and verify the pinned FFmpeg artifact |
+| `npm run build:e2e` | Generate fixtures and build the E2E-enabled application |
+| `npm run test:e2e:tauri` | Run native Windows WebdriverIO tests |
+| `npm run tauri:build` | Build the production NSIS installer |
 
-本项目不使用 Authenticode 证书。发布产物会明确保持未签名，并提供 SHA-256 校验和及 GitHub artifact attestation。
+## Making changes
 
-## 许可证
+- Keep user-visible messages synchronized across the four catalogs in `src/i18n.tsx`.
+- Keep the frontend and Rust media-extension allowlists synchronized.
+- Update both Rust serialization types and TypeScript interfaces when an IPC payload changes.
+- Add or update colocated tests for behavior changes. Cross-boundary changes should also receive native E2E coverage when unit tests cannot exercise the behavior.
+- Do not manually edit downloaded FFmpeg resources, generated test fixtures, Tauri schema output, or build results.
+- Keep the English and Simplified Chinese README files synchronized.
 
-项目代码采用 [MIT License](LICENSE)。内置 FFmpeg 的来源、重建信息和许可证说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 `scripts/ffmpeg-lock.json`。
+For the complete repository rules and change-to-test matrix used by AI coding agents, see [AGENTS.md](AGENTS.md).
+
+## Verification
+
+Run the frontend checks from the repository root:
+
+```powershell
+npm test
+npm run build
+npm audit --audit-level=high
+```
+
+Run the Rust checks from `src-tauri`:
+
+```powershell
+cargo fmt --all -- --check
+cargo clippy --all-targets --locked -- -D warnings
+cargo test --locked
+cargo audit
+```
+
+`cargo audit` requires `cargo-audit`; CI installs it with `cargo install cargo-audit --locked`. Run the native E2E commands for changes to IPC, file access, analysis, packaging, or other Tauri-only behavior.
+
+## FFmpeg, cache, and application permissions
+
+The production package contains an unmodified, pinned LGPL build from BtbN FFmpeg Builds. The source, artifact URL, build source, version, and expected checksum are recorded in `scripts/ffmpeg-lock.json`. Developers can point source builds at a compatible executable through `FFMPEG_PATH`; official packages use the bundled executable.
+
+Analysis results use a versioned cache in the application data directory. The settings dialog reports cache usage and can clear it when no analysis is active.
+
+The main Tauri capability grants only event listen/unlisten and file-dialog access. Media files become available to the asset protocol only after the Rust backend has canonicalized and accepted them. Changes to capabilities, the content security policy, asset scope, or file validation should be treated as cross-boundary changes and tested accordingly.
+
+## Release process
+
+Keep the version synchronized in all three locations:
+
+- `package.json`
+- `src-tauri/Cargo.toml`
+- `src-tauri/tauri.conf.json`
+
+After all CI gates pass, create and push a `v*` tag. The release workflow builds an unsigned NSIS installer, then silently installs, launches, and uninstalls it on both `windows-2022` and `windows-2025`. The `windows-2022` artifact is published with SHA-256 checksums and GitHub artifact attestation.
+
+## License
+
+Echo Player is released under the [MIT License](LICENSE). FFmpeg attribution, rebuild information, and third-party licensing details are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and `scripts/ffmpeg-lock.json`.
