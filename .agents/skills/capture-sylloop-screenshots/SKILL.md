@@ -1,15 +1,15 @@
 ---
-name: capture-echo-screenshots
-description: Capture and refresh native Windows screenshots of Echo Player in English and Simplified Chinese from a user-supplied real media file. Use when asked to update README images, replace outdated product screenshots, document player UI states, or inspect which stable Echo Player surfaces need new screenshots.
+name: capture-sylloop-screenshots
+description: Capture and refresh native Windows screenshots of Sylloop in English and Simplified Chinese from a user-supplied real media file. Use when asked to update README images, replace outdated product screenshots, document player UI states, or inspect which stable Sylloop surfaces need new screenshots.
 ---
 
-# Capture Echo Player Screenshots
+# Capture Sylloop Screenshots
 
 Refresh screenshots from the real Tauri application through its test-only native WebDriver build. Never use browser demo mode as a substitute.
 
 ## Inspect before capturing
 
-1. Confirm the repository is Echo Player and read its root `AGENTS.md`.
+1. Confirm the repository is Sylloop and read its root `AGENTS.md`.
 2. Check `git status --short`; preserve unrelated changes and never clean them up.
 3. Read the screenshot blocks in `README.md` and `README.zh-CN.md`.
 4. Inspect `src/App.tsx` and relevant files in `src/components/` for distinct, user-visible full pages, dialogs, drawers, workbenches, and important status overlays.
@@ -19,14 +19,14 @@ Refresh screenshots from the real Tauri application through its test-only native
 
 Require the user to provide an absolute path to a supported real media file. If the path is missing, ask for it and stop. Do not search the user's machine or choose a private file automatically.
 
-The capture script copies the file into ignored locale-specific fixture directories under the neutral name `Echo-Lesson.<ext>`. The original remains untouched, and its path and filename do not appear in screenshots or tracked files. The waveform still reflects the supplied media content.
+The capture script copies the file into ignored locale-specific fixture directories under the neutral name `Sylloop-Lesson.<ext>`. The original remains untouched, and its path and filename do not appear in screenshots or tracked files. The waveform still reflects the supplied media content.
 
 ## Run the capture
 
 From the repository root, first capture to an ignored preview directory:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .agents/skills/capture-echo-screenshots/scripts/capture-echo-screenshots.ps1 -MediaPath "C:\absolute\path\lesson.mp3" -OutputDirectory "e2e-results\echo-screenshot-preview"
+powershell -NoProfile -ExecutionPolicy Bypass -File .agents/skills/capture-sylloop-screenshots/scripts/capture-sylloop-screenshots.ps1 -MediaPath "C:\absolute\path\lesson.mp3" -OutputDirectory "e2e-results\sylloop-screenshot-preview"
 ```
 
 Inspect every preview image as described below. Only after all six core images pass visual review, rerun the same command without `-OutputDirectory` to replace the tracked screenshots and migrate the README links as one validated transaction.
@@ -35,7 +35,7 @@ Use `-Mode core` to generate only the three README states per locale. The defaul
 
 Use `-OutputDirectory <path>` for a smoke test or preview. A non-default output directory never rewrites README files or removes the legacy images. Never skip the preview run before a tracked-image refresh.
 
-The script builds the existing E2E-only Tauri binary, captures the WebView viewport without desktop or native-title-bar pixels, saves images to an ignored staging directory, verifies all six core images, and only then updates the default screenshot directory. It does not clear the user's analysis cache, stop running Echo Player processes, commit, stage, or push changes.
+The script builds the existing E2E-only Tauri binary, captures the WebView viewport without desktop or native-title-bar pixels, saves images to an ignored staging directory, verifies all six core images, and only then updates the default screenshot directory. It does not clear the user's analysis cache, stop running Sylloop processes, commit, stage, or push changes.
 
 ## Review the result
 

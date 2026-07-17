@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { collectReleaseContext } from "../.agents/skills/bump-echo-version/scripts/collect-release-context.mjs";
+import { collectReleaseContext } from "../.agents/skills/bump-sylloop-version/scripts/collect-release-context.mjs";
 
 const roots = [];
 
@@ -12,15 +12,15 @@ function git(root, ...args) {
 }
 
 async function createFirstReleaseRepository() {
-  const root = await mkdtemp(path.join(os.tmpdir(), "echo-release-context-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "sylloop-release-context-"));
   roots.push(root);
   await mkdir(path.join(root, "src-tauri"), { recursive: true });
   await Promise.all([
-    writeFile(path.join(root, "package.json"), '{"name":"echo-player","version":"0.1.0"}\n'),
-    writeFile(path.join(root, "package-lock.json"), '{"name":"echo-player","version":"0.1.0","packages":{"":{"name":"echo-player","version":"0.1.0"}}}\n'),
-    writeFile(path.join(root, "src-tauri", "Cargo.toml"), '[package]\nname = "echo-player"\nversion = "0.1.0"\n'),
-    writeFile(path.join(root, "src-tauri", "Cargo.lock"), 'version = 4\n\n[[package]]\nname = "echo-player"\nversion = "0.1.0"\n'),
-    writeFile(path.join(root, "src-tauri", "tauri.conf.json"), '{"productName":"Echo Player","version":"0.1.0"}\n'),
+    writeFile(path.join(root, "package.json"), '{"name":"sylloop","version":"0.1.0"}\n'),
+    writeFile(path.join(root, "package-lock.json"), '{"name":"sylloop","version":"0.1.0","packages":{"":{"name":"sylloop","version":"0.1.0"}}}\n'),
+    writeFile(path.join(root, "src-tauri", "Cargo.toml"), '[package]\nname = "sylloop"\nversion = "0.1.0"\n'),
+    writeFile(path.join(root, "src-tauri", "Cargo.lock"), 'version = 4\n\n[[package]]\nname = "sylloop"\nversion = "0.1.0"\n'),
+    writeFile(path.join(root, "src-tauri", "tauri.conf.json"), '{"productName":"Sylloop","version":"0.1.0"}\n'),
     writeFile(path.join(root, "CHANGELOG.md"), '# Changelog\n\n## [Unreleased]\n\n### Added\n\n- First public release.\n'),
   ]);
   git(root, "init", "-b", "main");

@@ -5,7 +5,7 @@ param(
   [ValidateSet("smart", "core")]
   [string]$Mode = "smart",
 
-  [string]$OutputDirectory = "docs/images/echo-player"
+  [string]$OutputDirectory = "docs/images/sylloop"
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,14 +42,14 @@ function Test-Image([string]$PathValue, [int]$MinimumWidth, [int]$MinimumHeight)
 }
 
 if ([System.Environment]::OSVersion.Platform -ne [System.PlatformID]::Win32NT) {
-  throw "Echo Player screenshot capture is supported only on Windows."
+  throw "Sylloop screenshot capture is supported only on Windows."
 }
 
 $skillRoot = Split-Path -Parent $PSScriptRoot
 $script:RepositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $skillRoot "../../.."))
 if (-not (Test-Path -LiteralPath (Join-Path $script:RepositoryRoot "src-tauri/tauri.conf.json") -PathType Leaf) -or
     -not (Test-Path -LiteralPath (Join-Path $script:RepositoryRoot "src/App.tsx") -PathType Leaf)) {
-  throw "Run this skill from its Echo Player repository; expected repository markers were not found."
+  throw "Run this skill from its Sylloop repository; expected repository markers were not found."
 }
 
 $resolvedMedia = (Resolve-Path -LiteralPath $MediaPath -ErrorAction Stop).Path
@@ -62,9 +62,9 @@ if ($supportedExtensions -notcontains $extension) {
   throw "Unsupported media extension '$extension'."
 }
 
-$running = Get-Process -Name "echo-player" -ErrorAction SilentlyContinue
+$running = Get-Process -Name "sylloop" -ErrorAction SilentlyContinue
 if ($running) {
-  throw "Echo Player is already running. Close it before capturing screenshots; the skill will not stop it automatically."
+  throw "Sylloop is already running. Close it before capturing screenshots; the skill will not stop it automatically."
 }
 
 $wdio = Join-Path $script:RepositoryRoot "node_modules/.bin/wdio.cmd"
@@ -72,7 +72,7 @@ if (-not (Test-Path -LiteralPath $wdio -PathType Leaf)) {
   throw "JavaScript dependencies are missing. Run npm ci first."
 }
 
-$defaultOutput = [System.IO.Path]::GetFullPath((Join-Path $script:RepositoryRoot "docs/images/echo-player"))
+$defaultOutput = [System.IO.Path]::GetFullPath((Join-Path $script:RepositoryRoot "docs/images/sylloop"))
 $resolvedOutput = Resolve-RepositoryPath $OutputDirectory
 $migrateReadmes = $resolvedOutput.Equals($defaultOutput, [System.StringComparison]::OrdinalIgnoreCase)
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -84,10 +84,10 @@ if (-not $mediaRoot.StartsWith($allowedMediaRoot + [System.IO.Path]::DirectorySe
 }
 
 $environmentNames = @(
-  "ECHO_SCREENSHOT_STAGE",
-  "ECHO_SCREENSHOT_MODE",
-  "ECHO_SCREENSHOT_MEDIA_EN",
-  "ECHO_SCREENSHOT_MEDIA_ZH_CN"
+  "SYLLOOP_SCREENSHOT_STAGE",
+  "SYLLOOP_SCREENSHOT_MODE",
+  "SYLLOOP_SCREENSHOT_MEDIA_EN",
+  "SYLLOOP_SCREENSHOT_MEDIA_ZH_CN"
 )
 $previousEnvironment = @{}
 foreach ($name in $environmentNames) {
@@ -105,17 +105,17 @@ try {
   foreach ($locale in @("en", "zh-CN")) {
     $localeDirectory = Join-Path $mediaRoot $locale
     New-Item -ItemType Directory -Force -Path $localeDirectory | Out-Null
-    $target = Join-Path $localeDirectory ("Echo-Lesson" + $extension)
+    $target = Join-Path $localeDirectory ("Sylloop-Lesson" + $extension)
     Copy-Item -LiteralPath $resolvedMedia -Destination $target -Force
     [System.IO.File]::SetLastWriteTimeUtc($target, [DateTime]::UtcNow.AddSeconds($localeIndex))
     $localeMedia[$locale] = $target
     $localeIndex += 1
   }
 
-  Set-EnvironmentValue "ECHO_SCREENSHOT_STAGE" $stageDirectory
-  Set-EnvironmentValue "ECHO_SCREENSHOT_MODE" $Mode
-  Set-EnvironmentValue "ECHO_SCREENSHOT_MEDIA_EN" $localeMedia["en"]
-  Set-EnvironmentValue "ECHO_SCREENSHOT_MEDIA_ZH_CN" $localeMedia["zh-CN"]
+  Set-EnvironmentValue "SYLLOOP_SCREENSHOT_STAGE" $stageDirectory
+  Set-EnvironmentValue "SYLLOOP_SCREENSHOT_MODE" $Mode
+  Set-EnvironmentValue "SYLLOOP_SCREENSHOT_MEDIA_EN" $localeMedia["en"]
+  Set-EnvironmentValue "SYLLOOP_SCREENSHOT_MEDIA_ZH_CN" $localeMedia["zh-CN"]
 
   $buildBackup = Join-Path $stageDirectory "build-file-backup"
   $protectedBuildFiles = @((Join-Path $script:RepositoryRoot "src-tauri/Cargo.toml"))
@@ -176,7 +176,7 @@ try {
     foreach ($mapping in $readmeMappings) {
       $content = [System.IO.File]::ReadAllText($mapping.Path)
       foreach ($name in $coreNames) {
-        $content = $content.Replace("docs/images/echo-player/$name.png", "docs/images/echo-player/$name.$($mapping.Locale).png")
+        $content = $content.Replace("docs/images/sylloop/$name.png", "docs/images/sylloop/$name.$($mapping.Locale).png")
       }
       [System.IO.File]::WriteAllText($mapping.Path, $content, $utf8)
     }
@@ -188,7 +188,7 @@ try {
 
   $reportPath = Join-Path $stageDirectory "capture-report.json"
   $report = if (Test-Path -LiteralPath $reportPath) { Get-Content -Raw $reportPath | ConvertFrom-Json } else { $null }
-  Write-Host "Captured Echo Player screenshots at $resolvedOutput"
+  Write-Host "Captured Sylloop screenshots at $resolvedOutput"
   Write-Host "Core screenshot size: $($dimensionKeys[0])"
   Write-Host "Staging and capture report: $stageDirectory"
   if ($report -and @($report.skipped).Count -gt 0) {

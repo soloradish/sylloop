@@ -22,23 +22,23 @@ $uninstallRoots = @(
   "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
 )
 $registration = Get-ItemProperty $uninstallRoots -ErrorAction SilentlyContinue |
-  Where-Object { $_.DisplayName -eq "Echo Player" } |
+  Where-Object { $_.DisplayName -eq "Sylloop" } |
   Select-Object -First 1
 if (-not $registration) {
-  throw "Echo Player was installed, but no uninstall registration was found."
+  throw "Sylloop was installed, but no uninstall registration was found."
 }
 
 $candidates = @()
 if ($registration.InstallLocation) {
   $installLocation = ConvertFrom-RegistryPathValue ([string]$registration.InstallLocation)
-  $candidates += Join-Path $installLocation "echo-player.exe"
-  $candidates += Join-Path $installLocation "Echo Player.exe"
+  $candidates += Join-Path $installLocation "sylloop.exe"
+  $candidates += Join-Path $installLocation "Sylloop.exe"
 }
-$candidates += Join-Path $env:LOCALAPPDATA "Echo Player/echo-player.exe"
-$candidates += Join-Path $env:LOCALAPPDATA "Programs/Echo Player/echo-player.exe"
+$candidates += Join-Path $env:LOCALAPPDATA "Sylloop/sylloop.exe"
+$candidates += Join-Path $env:LOCALAPPDATA "Programs/Sylloop/sylloop.exe"
 $executable = $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -First 1
 if (-not $executable) {
-  throw "The installed Echo Player executable was not found."
+  throw "The installed Sylloop executable was not found."
 }
 
 $app = Start-Process -FilePath $executable -PassThru

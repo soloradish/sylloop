@@ -6,6 +6,7 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { Waveform } from "./components/Waveform";
 import { PlaybackIcon } from "./components/PlaybackIcon";
 import { SettingsModal } from "./components/SettingsModal";
+import { BrandMark } from "./components/BrandMark";
 import { HelpModal } from "./components/HelpModal";
 import { AnalysisProgress } from "./components/AnalysisProgress";
 import { ERROR_MESSAGE_KEYS, I18nProvider, useI18n } from "./i18n";
@@ -411,8 +412,8 @@ function PlayerApp() {
 
   useEffect(() => {
     if (import.meta.env.VITE_E2E !== "1") return;
-    window.__ECHO_PLAYER_E2E_OPEN_PATH__ = (path) => openPath(path);
-    window.__ECHO_PLAYER_E2E_SET_SELECTION__ = (startRatio, endRatio) => {
+    window.__SYLLOOP_E2E_OPEN_PATH__ = (path) => openPath(path);
+    window.__SYLLOOP_E2E_SET_SELECTION__ = (startRatio, endRatio) => {
       const duration = usePlayerStore.getState().duration;
       const start = Math.max(0, Math.min(1, startRatio)) * duration;
       const end = Math.max(0, Math.min(1, endRatio)) * duration;
@@ -420,8 +421,8 @@ function PlayerApp() {
       setSelection({ start, end });
     };
     return () => {
-      delete window.__ECHO_PLAYER_E2E_OPEN_PATH__;
-      delete window.__ECHO_PLAYER_E2E_SET_SELECTION__;
+      delete window.__SYLLOOP_E2E_OPEN_PATH__;
+      delete window.__SYLLOOP_E2E_SET_SELECTION__;
     };
   }, [openPath]);
 
@@ -691,8 +692,8 @@ function PlayerApp() {
         <button ref={helpButtonRef} className="empty-help-button" onClick={() => setHelpOpen(true)} aria-haspopup="dialog" aria-expanded={helpOpen}>
           {t("top.help")}
         </button>
-        <div className="brand-mark">E</div>
-        <h1>Echo Player</h1>
+        <BrandMark />
+        <h1>Sylloop</h1>
         <p>{t("empty.tagline")}</p>
         <button className="open-primary" onClick={pickMedia}>{t("empty.openMedia")}</button>
         <span className="drop-hint">{t("empty.dropHint")}</span>
@@ -720,7 +721,7 @@ function PlayerApp() {
     <main className="player-shell">
       <header className="topbar">
         <div className="topbar-primary">
-          <span className="wordmark" aria-label="Echo Player">Echo</span>
+          <span className="wordmark" aria-label="Sylloop">Sylloop</span>
           <button className="open-file-button" onClick={pickMedia} title={t("top.openAnother")}>
             <svg viewBox="0 0 20 20" aria-hidden="true">
               <path d="M2.5 5.25h5l1.5 1.5h8.5v8.5a1.5 1.5 0 0 1-1.5 1.5H4a1.5 1.5 0 0 1-1.5-1.5v-10Z" />

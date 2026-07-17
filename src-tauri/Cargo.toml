@@ -1,12 +1,12 @@
 [package]
-name = "echo-player"
+name = "sylloop"
 version = "0.2.0"
 description = "A focused media player for language learners"
-authors = ["Echo Player contributors"]
+authors = ["Sylloop contributors"]
 edition = "2021"
 
 [lib]
-name = "echo_player_lib"
+name = "sylloop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]

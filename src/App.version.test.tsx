@@ -57,7 +57,7 @@ describe("runtime application version", () => {
     await waitFor(() => expect(mocks.getVersion).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(within(screen.getByRole("dialog", { name: "Settings" })).getByTestId("settings-version").textContent)
-      .toBe("Echo Player · Version 0.1.0");
+      .toBe("Sylloop · Version 0.1.0");
   });
 
   it("falls back without surfacing an application error when the version is unavailable", async () => {
@@ -66,7 +66,7 @@ describe("runtime application version", () => {
     await waitFor(() => expect(mocks.getVersion).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(within(screen.getByRole("dialog", { name: "Settings" })).getByTestId("settings-version").textContent)
-      .toBe("Echo Player · Version unavailable");
+      .toBe("Sylloop · Version unavailable");
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });

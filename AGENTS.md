@@ -2,9 +2,9 @@
 
 ## Scope and purpose
 
-These instructions apply to the entire Echo Player repository. They are the default operating rules for AI coding agents working here. Follow more specific instructions only if a future subdirectory contains its own `AGENTS.md`.
+These instructions apply to the entire Sylloop repository. They are the default operating rules for AI coding agents working here. Follow more specific instructions only if a future subdirectory contains its own `AGENTS.md`.
 
-Echo Player is a Windows-only Tauri 2 desktop application for language-learning playback. Preserve the existing v0.1.0 product behavior unless a task explicitly changes it.
+Sylloop is a Windows-only Tauri 2 desktop application for language-learning playback. Preserve the existing product behavior unless a task explicitly changes it.
 
 ## Repository map
 

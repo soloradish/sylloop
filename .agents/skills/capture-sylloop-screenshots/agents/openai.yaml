@@ -1,0 +1,4 @@
+interface:
+  display_name: "Capture Sylloop Screenshots"
+  short_description: "Capture bilingual native Sylloop screenshots"
+  default_prompt: "Use $capture-sylloop-screenshots to refresh Sylloop screenshots from a real media file."

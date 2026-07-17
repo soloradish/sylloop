@@ -1,7 +1,0 @@
-interface:
-  display_name: "升级 Echo Player 版本"
-  short_description: "分析发布变更、推荐语义版本并在确认后创建 draft PR"
-  default_prompt: "Use $bump-echo-version to analyze Echo Player changes, recommend the next version, and wait for confirmation before preparing a draft release PR."
-
-policy:
-  allow_implicit_invocation: true

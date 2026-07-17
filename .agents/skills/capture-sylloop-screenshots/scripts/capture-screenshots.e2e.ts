@@ -6,12 +6,12 @@ import { fileURLToPath } from "node:url";
 type Locale = "en" | "zh-CN";
 type CaptureMode = "core" | "smart";
 
-const stageDirectory = process.env.ECHO_SCREENSHOT_STAGE;
-const focusScript = path.join(path.dirname(fileURLToPath(import.meta.url)), "focus-echo-window.ps1");
-const mode = (process.env.ECHO_SCREENSHOT_MODE ?? "smart") as CaptureMode;
+const stageDirectory = process.env.SYLLOOP_SCREENSHOT_STAGE;
+const focusScript = path.join(path.dirname(fileURLToPath(import.meta.url)), "focus-sylloop-window.ps1");
+const mode = (process.env.SYLLOOP_SCREENSHOT_MODE ?? "smart") as CaptureMode;
 const mediaByLocale: Record<Locale, string | undefined> = {
-  en: process.env.ECHO_SCREENSHOT_MEDIA_EN,
-  "zh-CN": process.env.ECHO_SCREENSHOT_MEDIA_ZH_CN,
+  en: process.env.SYLLOOP_SCREENSHOT_MEDIA_EN,
+  "zh-CN": process.env.SYLLOOP_SCREENSHOT_MEDIA_ZH_CN,
 };
 
 const localeCopy = {
@@ -29,7 +29,7 @@ const localeCopy = {
   },
 } satisfies Record<Locale, Record<string, string>>;
 
-if (!stageDirectory) throw new Error("ECHO_SCREENSHOT_STAGE is required");
+if (!stageDirectory) throw new Error("SYLLOOP_SCREENSHOT_STAGE is required");
 if (!mediaByLocale.en || !mediaByLocale["zh-CN"]) throw new Error("Both locale media paths are required");
 if (!(["core", "smart"] as const).includes(mode)) throw new Error(`Unsupported capture mode: ${mode}`);
 
@@ -72,7 +72,7 @@ async function capture(name: string, required = true): Promise<boolean> {
 
 async function setLocale(locale: Locale): Promise<void> {
   await browser.execute((nextLocale) => {
-    const key = "echo-player-preferences";
+    const key = "sylloop-preferences";
     let saved: Record<string, unknown> = {};
     try {
       const raw = localStorage.getItem(key);
@@ -90,7 +90,7 @@ async function setLocale(locale: Locale): Promise<void> {
     }));
   }, locale);
   await browser.refresh();
-  await expect($("h1")).toHaveText("Echo Player");
+  await expect($("h1")).toHaveText("Sylloop");
   await browser.execute(() => {
     const style = document.createElement("style");
     style.dataset.screenshotCapture = "true";
@@ -102,8 +102,8 @@ async function setLocale(locale: Locale): Promise<void> {
 
 async function openMedia(mediaPath: string): Promise<void> {
   await browser.execute(async (targetPath) => {
-    if (!window.__ECHO_PLAYER_E2E_OPEN_PATH__) throw new Error("E2E open hook is unavailable");
-    await window.__ECHO_PLAYER_E2E_OPEN_PATH__(targetPath);
+    if (!window.__SYLLOOP_E2E_OPEN_PATH__) throw new Error("E2E open hook is unavailable");
+    await window.__SYLLOOP_E2E_OPEN_PATH__(targetPath);
   }, mediaPath);
   await expect($(".file-title")).toHaveText(path.basename(mediaPath));
   await expect($(".player-shell")).toBeDisplayed();
@@ -127,8 +127,8 @@ async function waitForAnalysis(locale: Locale): Promise<void> {
 
 async function dragSelection(): Promise<void> {
   await browser.execute(() => {
-    if (!window.__ECHO_PLAYER_E2E_SET_SELECTION__) throw new Error("E2E selection hook is unavailable");
-    window.__ECHO_PLAYER_E2E_SET_SELECTION__(0.24, 0.58);
+    if (!window.__SYLLOOP_E2E_SET_SELECTION__) throw new Error("E2E selection hook is unavailable");
+    window.__SYLLOOP_E2E_SET_SELECTION__(0.24, 0.58);
   });
   await $(".selection-draft-bar").waitForDisplayed();
 }
@@ -193,15 +193,15 @@ async function captureLocale(locale: Locale): Promise<void> {
   }
 }
 
-describe("Echo Player bilingual documentation screenshots", () => {
+describe("Sylloop bilingual documentation screenshots", () => {
   before(async () => {
-    originalPreferences = await browser.execute(() => localStorage.getItem("echo-player-preferences"));
+    originalPreferences = await browser.execute(() => localStorage.getItem("sylloop-preferences"));
   });
 
   after(async () => {
     if (originalPreferences !== undefined) {
       await browser.execute((raw) => {
-        const key = "echo-player-preferences";
+        const key = "sylloop-preferences";
         if (raw === null) localStorage.removeItem(key);
         else localStorage.setItem(key, raw);
       }, originalPreferences);

@@ -5,6 +5,6 @@ interface ImportMetaEnv {
 }
 
 interface Window {
-  __ECHO_PLAYER_E2E_OPEN_PATH__?: (path: string) => Promise<void>;
-  __ECHO_PLAYER_E2E_SET_SELECTION__?: (startRatio: number, endRatio: number) => void;
+  __SYLLOOP_E2E_OPEN_PATH__?: (path: string) => Promise<void>;
+  __SYLLOOP_E2E_SET_SELECTION__?: (startRatio: number, endRatio: number) => void;
 }
