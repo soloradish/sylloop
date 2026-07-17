@@ -81,9 +81,10 @@ jobs:
             .e2e-target/debug/.fingerprint
             .e2e-target/debug/build
             .e2e-target/debug/deps
-          key: e2e-build-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          # Tauri build outputs contain absolute checkout paths, so repository renames must invalidate this cache.
+          key: e2e-build-${{ runner.os }}-${{ github.event.repository.name }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('src-tauri/Cargo.lock') }}
           restore-keys: |
-            e2e-build-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-
+            e2e-build-${{ runner.os }}-${{ github.event.repository.name }}-${{ hashFiles('rust-toolchain.toml') }}-
       - name: Install Rust toolchain
         run: rustup show
       - name: Install JavaScript dependencies
