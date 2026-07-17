@@ -6,11 +6,11 @@ Echo Player is a Windows desktop media player built for language-learning workfl
 
 ## Screenshots
 
-![Echo Player waveform and replay controls](docs/images/echo-player/waveform-overview.png)
+![Echo Player waveform and replay controls](docs/images/echo-player/waveform-overview.en.png)
 
 | Focused selection loop | Player settings |
 | --- | --- |
-| ![Echo Player repeating a selected waveform range](docs/images/echo-player/selection-loop.png) | ![Echo Player settings with language, loop gap, cache, and playback speed controls](docs/images/echo-player/player-settings.png) |
+| ![Echo Player repeating a selected waveform range](docs/images/echo-player/selection-loop.en.png) | ![Echo Player settings with language, loop gap, cache, and playback speed controls](docs/images/echo-player/player-settings.en.png) |
 
 ## Highlights
 

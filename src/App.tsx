@@ -412,7 +412,17 @@ function PlayerApp() {
   useEffect(() => {
     if (import.meta.env.VITE_E2E !== "1") return;
     window.__ECHO_PLAYER_E2E_OPEN_PATH__ = (path) => openPath(path);
-    return () => { delete window.__ECHO_PLAYER_E2E_OPEN_PATH__; };
+    window.__ECHO_PLAYER_E2E_SET_SELECTION__ = (startRatio, endRatio) => {
+      const duration = usePlayerStore.getState().duration;
+      const start = Math.max(0, Math.min(1, startRatio)) * duration;
+      const end = Math.max(0, Math.min(1, endRatio)) * duration;
+      if (duration <= 0 || end - start < 0.12) throw new Error("E2E selection requires loaded media and a valid range");
+      setSelection({ start, end });
+    };
+    return () => {
+      delete window.__ECHO_PLAYER_E2E_OPEN_PATH__;
+      delete window.__ECHO_PLAYER_E2E_SET_SELECTION__;
+    };
   }, [openPath]);
 
   const pickMedia = async () => {

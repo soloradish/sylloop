@@ -1,0 +1,7 @@
+interface:
+  display_name: "Capture Echo Screenshots"
+  short_description: "Capture bilingual Echo Player UI screenshots"
+  default_prompt: "Use $capture-echo-screenshots to refresh Echo Player screenshots in English and Simplified Chinese from a real media file."
+
+policy:
+  allow_implicit_invocation: true
