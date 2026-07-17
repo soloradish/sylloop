@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import type { Options } from "@wdio/types";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const defaultBinary = path.join(root, ".e2e-target", "debug", "echo-player.exe");
-const application = path.resolve(process.env.ECHO_PLAYER_E2E_BINARY ?? defaultBinary);
+const defaultBinary = path.join(root, ".e2e-target", "debug", "sylloop.exe");
+const application = path.resolve(process.env.SYLLOOP_E2E_BINARY ?? defaultBinary);
 
 export const config: Options.Testrunner = {
   runner: "local",

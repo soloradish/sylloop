@@ -5,7 +5,7 @@ import { playlistIndex } from "./lib/playlist";
 import { detectLocale, isAppLocale } from "./i18n";
 import { DEFAULT_SHORTCUTS, loadShortcutBindings } from "./lib/shortcuts";
 
-export const PREFERENCES_STORAGE_KEY = "echo-player-preferences";
+export const PREFERENCES_STORAGE_KEY = "sylloop-preferences";
 
 const BASE_PREFERENCES = { volume: 0.85, speed: 1, loopGap: 0 } as const;
 const LOOP_GAPS = new Set([0, 0.5, 1, 2]);

@@ -1,16 +1,16 @@
 [简体中文](README.zh-CN.md)
 
-# Echo Player
+# Sylloop
 
-Echo Player is a Windows desktop media player built for language-learning workflows that depend on quick replay and precise repetition. Version 0.1.0 works with local audio and video, generates a waveform and pause-based segments with FFmpeg, and provides several ways to repeat a segment or an arbitrary selection.
+Sylloop is a Windows desktop media player built for language-learning workflows that depend on quick replay and precise repetition. It works with local audio and video, generates a waveform and pause-based segments with FFmpeg, and provides several ways to repeat a segment or an arbitrary selection.
 
 ## Screenshots
 
-![Echo Player waveform and replay controls](docs/images/echo-player/waveform-overview.en.png)
+![Sylloop waveform and replay controls](docs/images/sylloop/waveform-overview.en.png)
 
 | Focused selection loop | Player settings |
 | --- | --- |
-| ![Echo Player repeating a selected waveform range](docs/images/echo-player/selection-loop.en.png) | ![Echo Player settings with language, loop gap, cache, and playback speed controls](docs/images/echo-player/player-settings.en.png) |
+| ![Sylloop repeating a selected waveform range](docs/images/sylloop/selection-loop.en.png) | ![Sylloop settings with language, loop gap, cache, and playback speed controls](docs/images/sylloop/player-settings.en.png) |
 
 ## Highlights
 
@@ -33,7 +33,7 @@ Playlist discovery is intentionally non-recursive. Reaching the end of a media f
 - Windows 10 or Windows 11
 - Microsoft Edge WebView2 Runtime, which is normally included with supported Windows versions
 
-Official installers include the pinned LGPL FFmpeg executable. They are currently unsigned, so Windows may display a SmartScreen warning. Obtain installers from [GitHub Releases](https://github.com/soloradish/echo-player/releases) and verify them with the published `SHA256SUMS.txt`.
+Official installers include the pinned LGPL FFmpeg executable. They are currently unsigned, so Windows may display a SmartScreen warning. Obtain installers from [GitHub Releases](https://github.com/soloradish/sylloop/releases) and verify them with the published `SHA256SUMS.txt`.
 
 ### Developing the application
 
@@ -44,7 +44,7 @@ Official installers include the pinned LGPL FFmpeg executable. They are currentl
 
 ## Project page and feedback
 
-Visit the [Echo Player project page](https://lowid.me/en/echo-player/) for product and download information. Public problem reports and feature requests are handled through [GitHub Issues](https://github.com/soloradish/echo-player/issues/new/choose). A GitHub account is required; search existing issues first, include the application and Windows versions plus reproducible steps, and do not upload private media or sensitive information.
+Visit the [Sylloop project page](https://lowid.me/en/sylloop/) for product and download information. Public problem reports and feature requests are handled through [GitHub Issues](https://github.com/soloradish/sylloop/issues/new/choose). A GitHub account is required; search existing issues first, include the application and Windows versions plus reproducible steps, and do not upload private media or sensitive information.
 
 ## Architecture
 
@@ -148,6 +148,7 @@ npm run test:e2e:tauri
 | `npm run version:check` | Verify that every application version source is synchronized |
 | `npm run version:check -- --tag vX.Y.Z` | Verify synchronized versions against a release tag |
 | `npm run version:set -- X.Y.Z` | Set a stable application version in every manifest and lockfile |
+| `npm run release:manifest -- --installer PATH --tag vX.Y.Z --source-commit SHA --published-at RFC3339 --output PATH` | Generate the validated website release manifest from an installer |
 | `npm run ffmpeg:prepare` | Download and verify the pinned FFmpeg artifact |
 | `npm run build:e2e` | Generate fixtures and build the E2E-enabled application |
 | `npm run test:e2e:tauri` | Run native Windows WebdriverIO tests |
@@ -191,19 +192,19 @@ The production package contains an unmodified, pinned LGPL build from BtbN FFmpe
 
 Analysis results use a versioned cache in the application data directory. The settings dialog reports cache usage and can clear it when no analysis is active.
 
-The main Tauri capability grants only event listen/unlisten and file-dialog access. Media files become available to the asset protocol only after the Rust backend has canonicalized and accepted them. Changes to capabilities, the content security policy, asset scope, or file validation should be treated as cross-boundary changes and tested accordingly.
+The main Tauri capability grants only application-version reads, event listen/unlisten, file-dialog access, and opening explicitly allowlisted support URLs. Media files become available to the asset protocol only after the Rust backend has canonicalized and accepted them. Changes to capabilities, the content security policy, asset scope, or file validation should be treated as cross-boundary changes and tested accordingly.
 
 ## Release process
 
-Echo Player uses stable `MAJOR.MINOR.PATCH` versions. The first public release is `0.1.0`. During `0.x`, bug, security, performance, localization, dependency, and installer fixes increment `PATCH`; user features and breaking behavior changes increment `MINOR`. `1.0.0` begins the stable compatibility phase, after which breaking compatibility increments `MAJOR`. Documentation, test, or delivery-neutral CI changes do not require a release. Pre-release identifiers are not accepted yet.
+Sylloop uses stable `MAJOR.MINOR.PATCH` versions. The first Sylloop-branded release is `0.3.0`. During `0.x`, bug, security, performance, localization, dependency, and installer fixes increment `PATCH`; user features and breaking behavior changes increment `MINOR`. `1.0.0` begins the stable compatibility phase, after which breaking compatibility increments `MAJOR`. Documentation, test, or delivery-neutral CI changes do not require a release. Pre-release identifiers are not accepted yet.
 
 Use the repository skill to analyze the changes on `main` and recommend the next version:
 
 ```text
-$bump-echo-version Analyze main and recommend the next Echo Player version.
+$bump-sylloop-version Analyze main and recommend the next Sylloop version.
 ```
 
-The skill does not modify the repository until its exact version and analyzed commit are confirmed with a reply such as `$bump-echo-version 确认 0.2.0，基于 b509b75`. After confirmation it creates a `codex/release-vX.Y.Z` branch, synchronizes the version, updates `CHANGELOG.md`, runs the local checks, and opens a draft release PR. It never merges the PR, creates a tag, or publishes a Release.
+The skill does not modify the repository until its exact version and analyzed commit are confirmed with a reply such as `$bump-sylloop-version 确认 0.3.0，基于 b509b75`. After confirmation it creates a `codex/release-vX.Y.Z` branch, synchronizes the version, updates `CHANGELOG.md`, runs the local checks, and opens a draft release PR. It never merges the PR, creates a tag, or publishes a Release.
 
 `src-tauri/tauri.conf.json` is the authoritative product version. `npm run version:set -- X.Y.Z` synchronizes it with `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock`. Run `npm run version:check` before committing release changes.
 
@@ -211,10 +212,10 @@ Every change enters `main` through a pull request protected by the required `CI 
 
 CI restores trusted FFmpeg, Cargo-download, and E2E dependency caches but never depends on a cache hit. Run the CI workflow manually against `main` once after changing the Rust toolchain, dependency locks, or `scripts/ffmpeg-lock.json` to refresh the default-branch caches.
 
-After the release PR is merged, create and push an annotated `vX.Y.Z` tag on that `main` commit. The release workflow rejects mismatched versions, lightweight tags, tags outside `main`, and versions that already have a GitHub Release. It builds one unsigned NSIS installer on `windows-2022`, smoke-tests that same downloaded installer on both `windows-2022` and `windows-2025`, and publishes it with SHA-256 checksums and GitHub artifact attestation.
+After the release PR is merged, create and push an annotated `vX.Y.Z` tag on that `main` commit. The release workflow rejects mismatched versions, lightweight tags, tags outside `main`, and versions that already have a GitHub Release. It builds one unsigned NSIS installer on `windows-2022`, smoke-tests that same downloaded installer on both `windows-2022` and `windows-2025`, and publishes it with SHA-256 checksums, a machine-readable `sylloop-release-v1.json` manifest for lowid.me, and GitHub artifact attestation.
 
 Never move a published tag or replace published assets. Use **Re-run failed jobs** for a transient failure so successful build jobs and their installer artifact are reused. If the source must change, prepare the next patch version instead.
 
 ## License
 
-Echo Player is released under the [MIT License](LICENSE). FFmpeg attribution, rebuild information, and third-party licensing details are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and `scripts/ffmpeg-lock.json`.
+Sylloop is released under the [MIT License](LICENSE). FFmpeg attribution, rebuild information, and third-party licensing details are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and `scripts/ffmpeg-lock.json`.

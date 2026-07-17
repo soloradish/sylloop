@@ -1,20 +1,20 @@
 ---
-name: bump-echo-version
-description: Analyze Echo Player release changes and recommend the next stable semantic version, then prepare a version-update branch and draft pull request only after exact user confirmation. Use when asked to choose, bump, upgrade, synchronize, or prepare the next Echo Player version or release PR. Never merge a PR, create or move a tag, or publish a GitHub Release.
+name: bump-sylloop-version
+description: Analyze Sylloop release changes and recommend the next stable semantic version, then prepare a version-update branch and draft pull request only after exact user confirmation. Use when asked to choose, bump, upgrade, synchronize, or prepare the next Sylloop version or release PR. Never merge a PR, create or move a tag, or publish a GitHub Release.
 ---
 
-# Bump Echo Player Version
+# Bump Sylloop Version
 
 Prepare version changes in two strictly separated phases: read-only analysis, then confirmed execution.
 
 ## Analyze without modifying tracked files
 
-1. Confirm the repository is Echo Player and read its root `AGENTS.md`.
+1. Confirm the repository is Sylloop and read its root `AGENTS.md`.
 2. Fetch current release facts without changing tracked files:
 
    ```powershell
    git fetch origin main --tags
-   node .agents/skills/bump-echo-version/scripts/collect-release-context.mjs
+   node .agents/skills/bump-sylloop-version/scripts/collect-release-context.mjs
    ```
 
    If network access or GitHub authentication is unavailable, stop instead of making a recommendation from stale remote state. Use `--offline` only for tests or when the user explicitly accepts local-only evidence.
@@ -32,7 +32,7 @@ Prepare version changes in two strictly separated phases: read-only analysis, th
 8. Ask for confirmation and end the turn. Provide this exact reply form with the analyzed short SHA:
 
    ```text
-   $bump-echo-version 确认 X.Y.Z，基于 abc1234
+   $bump-sylloop-version 确认 X.Y.Z，基于 abc1234
    ```
 
 Do not edit files, create or switch branches, commit, push, or open a PR before that confirmation.

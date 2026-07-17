@@ -24,7 +24,7 @@ body:
     id: workflow
     attributes:
       label: Desired workflow
-      description: Describe how you expect Echo Player to behave.
+      description: Describe how you expect Sylloop to behave.
     validations:
       required: true
   - type: textarea

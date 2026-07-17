@@ -1,11 +1,11 @@
 name: Bug report
-description: Report a reproducible problem with Echo Player
+description: Report a reproducible problem with Sylloop
 title: "[Bug]: "
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping improve Echo Player. GitHub Issues are public. Do not upload private media, file paths, logs, or other sensitive information.
+        Thanks for helping improve Sylloop. GitHub Issues are public. Do not upload private media, file paths, logs, or other sensitive information.
   - type: checkboxes
     id: existing
     attributes:
@@ -16,9 +16,9 @@ body:
   - type: input
     id: app-version
     attributes:
-      label: Echo Player version
+      label: Sylloop version
       description: Find this in Help or Settings.
-      placeholder: e.g. 0.1.0
+      placeholder: e.g. 0.3.0
     validations:
       required: true
   - type: input

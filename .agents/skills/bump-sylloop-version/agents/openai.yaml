@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bump Sylloop Version"
+  short_description: "Recommend and prepare a confirmed Sylloop release version"
+  default_prompt: "Use $bump-sylloop-version to analyze Sylloop changes, recommend the next version, and wait for confirmation before preparing a draft release PR."

@@ -906,24 +906,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
-name = "echo-player"
-version = "0.2.0"
-dependencies = [
- "approx",
- "serde",
- "serde_json",
- "sha2",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-wdio",
- "tauri-plugin-wdio-webdriver",
- "tempfile",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "embed-resource"
 version = "3.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3419,6 +3401,24 @@ dependencies = [
  "base64 0.21.7",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "sylloop"
+version = "0.2.0"
+dependencies = [
+ "approx",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-wdio",
+ "tauri-plugin-wdio-webdriver",
+ "tempfile",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

@@ -37,7 +37,7 @@ function renderSettings(cacheDisabled = false) {
 describe("analysis cache settings", () => {
   it("shows the installed application version", () => {
     renderSettings();
-    expect(screen.getByTestId("settings-version").textContent).toBe("Echo Player · Version 0.1.0");
+    expect(screen.getByTestId("settings-version").textContent).toBe("Sylloop · Version 0.1.0");
   });
 
   it("shows cache usage and clears saved analysis", () => {

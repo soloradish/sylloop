@@ -80,16 +80,16 @@ function findCargoLockPackage(text, packageName) {
 }
 
 function readCargoLockVersion(text) {
-  const entry = findCargoLockPackage(text, "echo-player");
+  const entry = findCargoLockPackage(text, "sylloop");
   const matches = [...entry.block.matchAll(/^version = "([^"]+)"\s*$/gm)];
-  if (matches.length !== 1) throw new Error("Cargo.lock echo-player entry must contain exactly one version");
+  if (matches.length !== 1) throw new Error("Cargo.lock sylloop entry must contain exactly one version");
   return matches[0][1];
 }
 
 function replaceCargoLockVersion(text, version) {
-  const entry = findCargoLockPackage(text, "echo-player");
+  const entry = findCargoLockPackage(text, "sylloop");
   const matches = [...entry.block.matchAll(/^version = "([^"]+)"\s*$/gm)];
-  if (matches.length !== 1) throw new Error("Cargo.lock echo-player entry must contain exactly one version");
+  if (matches.length !== 1) throw new Error("Cargo.lock sylloop entry must contain exactly one version");
   const updated = entry.block.replace(/^version = "[^"]+"\s*$/m, `version = "${version}"`);
   return text.slice(0, entry.start) + updated + text.slice(entry.end);
 }

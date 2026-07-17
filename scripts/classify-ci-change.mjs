@@ -65,12 +65,12 @@ function normalizeCargoLock(text) {
     const start = starts[index];
     const end = starts[index + 1] ?? text.length;
     const block = text.slice(start, end);
-    if (/^name = "echo-player"\s*$/m.test(block)) matches.push({ start, end, block });
+    if (/^name = "sylloop"\s*$/m.test(block)) matches.push({ start, end, block });
   }
-  if (matches.length !== 1) throw new Error("Cargo.lock echo-player package is ambiguous");
+  if (matches.length !== 1) throw new Error("Cargo.lock sylloop package is ambiguous");
   const entry = matches[0];
   const versions = [...entry.block.matchAll(/^version = "[^"]+"\s*$/gm)];
-  if (versions.length !== 1) throw new Error("Cargo.lock echo-player version is ambiguous");
+  if (versions.length !== 1) throw new Error("Cargo.lock sylloop version is ambiguous");
   const normalized = entry.block.replace(
     /^version = "[^"]+"\s*$/m,
     `version = "${VERSION_PLACEHOLDER}"`,

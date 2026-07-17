@@ -1,6 +1,6 @@
 # Third-party notices
 
-Echo Player is distributed under the MIT License and includes third-party components under their own licenses.
+Sylloop is distributed under the MIT License and includes third-party components under their own licenses.
 
 ## FFmpeg
 

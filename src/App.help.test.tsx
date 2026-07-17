@@ -63,8 +63,8 @@ describe("open file and Help entry points", () => {
   it("makes opening a file explicit and exposes protected support links", async () => {
     render(<App />);
 
-    expect(screen.queryByRole("button", { name: "Echo" })).toBeNull();
-    expect(screen.getByText("Echo").getAttribute("aria-label")).toBe("Echo Player");
+    expect(screen.queryByRole("button", { name: "Sylloop" })).toBeNull();
+    expect(screen.getByText("Sylloop").getAttribute("aria-label")).toBe("Sylloop");
 
     fireEvent.click(screen.getByRole("button", { name: "Open file" }));
     await waitFor(() => expect(mocks.openDialog).toHaveBeenCalledOnce());

@@ -31,11 +31,11 @@ public static class EchoScreenshotFocus {
 }
 "@
 
-$process = Get-Process -Name "echo-player" -ErrorAction SilentlyContinue |
+$process = Get-Process -Name "sylloop" -ErrorAction SilentlyContinue |
   Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero } |
   Sort-Object StartTime -Descending |
   Select-Object -First 1
-if (-not $process) { throw "Unable to find the Echo Player window." }
+if (-not $process) { throw "Unable to find the Sylloop window." }
 
 $handle = $process.MainWindowHandle
 $keepBoundsAndShow = [uint32]0x43
@@ -43,7 +43,7 @@ $restoreKeepBoundsAndShow = [uint32]0x53
 if ($Action -eq "focus") {
   [EchoScreenshotFocus]::ShowWindow($handle, 9) | Out-Null
   if (-not [EchoScreenshotFocus]::SetWindowPos($handle, [IntPtr]::new(-1), 0, 0, 0, 0, $keepBoundsAndShow)) {
-    throw "Unable to bring the Echo Player window forward."
+    throw "Unable to bring the Sylloop window forward."
   }
   [EchoScreenshotFocus]::SetForegroundWindow($handle) | Out-Null
   Start-Sleep -Milliseconds 250

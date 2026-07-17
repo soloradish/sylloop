@@ -7,15 +7,15 @@ import { checkVersion, setVersion } from "./version.mjs";
 const roots = [];
 
 async function createFixture(overrides = {}) {
-  const root = await mkdtemp(path.join(os.tmpdir(), "echo-version-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "sylloop-version-"));
   roots.push(root);
   await mkdir(path.join(root, "src-tauri"), { recursive: true });
   const files = {
-    "package.json": '{\n  "name": "echo-player",\n  "version": "0.1.0"\n}\n',
-    "package-lock.json": '{\n  "name": "echo-player",\n  "version": "0.1.0",\n  "packages": {\n    "": {\n      "name": "echo-player",\n      "version": "0.1.0"\n    }\n  }\n}\n',
-    "src-tauri/Cargo.toml": '[package]\nname = "echo-player"\nversion = "0.1.0"\nedition = "2021"\n',
-    "src-tauri/Cargo.lock": 'version = 4\n\n[[package]]\nname = "echo-player"\nversion = "0.1.0"\ndependencies = []\n\n[[package]]\nname = "other"\nversion = "2.0.0"\n',
-    "src-tauri/tauri.conf.json": '{\n  "productName": "Echo Player",\n  "version": "0.1.0"\n}\n',
+    "package.json": '{\n  "name": "sylloop",\n  "version": "0.1.0"\n}\n',
+    "package-lock.json": '{\n  "name": "sylloop",\n  "version": "0.1.0",\n  "packages": {\n    "": {\n      "name": "sylloop",\n      "version": "0.1.0"\n    }\n  }\n}\n',
+    "src-tauri/Cargo.toml": '[package]\nname = "sylloop"\nversion = "0.1.0"\nedition = "2021"\n',
+    "src-tauri/Cargo.lock": 'version = 4\n\n[[package]]\nname = "sylloop"\nversion = "0.1.0"\ndependencies = []\n\n[[package]]\nname = "other"\nversion = "2.0.0"\n',
+    "src-tauri/tauri.conf.json": '{\n  "productName": "Sylloop",\n  "version": "0.1.0"\n}\n',
     ...overrides,
   };
   await Promise.all(Object.entries(files).map(([relativePath, contents]) => writeFile(path.join(root, relativePath), contents, "utf8")));
@@ -50,7 +50,7 @@ describe("version management", () => {
 
   it("reports mismatched manifests and tags", async () => {
     const root = await createFixture({
-      "package.json": '{\n  "name": "echo-player",\n  "version": "0.1.1"\n}\n',
+      "package.json": '{\n  "name": "sylloop",\n  "version": "0.1.1"\n}\n',
     });
     await expect(checkVersion(root)).rejects.toThrow("Version sources do not match");
     const synchronized = await createFixture();
@@ -58,7 +58,7 @@ describe("version management", () => {
   });
 
   it("validates every structure before writing any file", async () => {
-    const malformedCargo = '[package]\nname = "echo-player"\nedition = "2021"\n';
+    const malformedCargo = '[package]\nname = "sylloop"\nedition = "2021"\n';
     const root = await createFixture({ "src-tauri/Cargo.toml": malformedCargo });
     const before = await readFile(path.join(root, "package.json"), "utf8");
     await expect(setVersion(root, "0.2.0")).rejects.toThrow("exactly one version");
@@ -67,7 +67,7 @@ describe("version management", () => {
   });
 
   it("rejects duplicate version declarations before writing", async () => {
-    const duplicateCargo = '[package]\nname = "echo-player"\nversion = "0.1.0"\nversion = "0.1.0"\n';
+    const duplicateCargo = '[package]\nname = "sylloop"\nversion = "0.1.0"\nversion = "0.1.0"\n';
     const root = await createFixture({ "src-tauri/Cargo.toml": duplicateCargo });
     const before = await readFile(path.join(root, "package.json"), "utf8");
     await expect(setVersion(root, "0.2.0")).rejects.toThrow("exactly one version");

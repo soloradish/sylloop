@@ -1,8 +1,12 @@
 # Changelog
 
-All notable changes to Echo Player are documented here.
+All notable changes to Sylloop are documented here.
 
 ## [Unreleased]
+
+- Fixed installed builds showing that the application version was unavailable.
+- Added a machine-readable release manifest for the lowid.me version and direct-download routes.
+- Renamed the application, installer, repository tooling, and delivery metadata from Echo Player to Sylloop with a new independent application identity.
 
 ## [0.2.0] - 2026-07-17
 
@@ -25,6 +29,6 @@ All notable changes to Echo Player are documented here.
 - Bundled a pinned LGPL FFmpeg build for offline analysis.
 - Added native Windows E2E, dependency audits, and unsigned installer smoke tests.
 
-[Unreleased]: https://github.com/soloradish/echo-player/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/soloradish/echo-player/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/soloradish/echo-player/releases/tag/v0.1.0
+[Unreleased]: https://github.com/soloradish/sylloop/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/soloradish/sylloop/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/soloradish/sylloop/tree/v0.1.0

@@ -157,10 +157,25 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
       - uses: actions/download-artifact@v4
         with:
           name: release-installer
           path: release-assets
+      - name: Normalize release asset filename
+        shell: powershell
+        run: |
+          $installers = @(Get-ChildItem release-assets/*.exe)
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one installer to publish, found $($installers.Count)."
+          }
+          $version = $env:RELEASE_TAG.Substring(1)
+          $releaseName = "Sylloop_${version}_x64-setup.exe"
+          if ($installers[0].Name -ne $releaseName) {
+            Rename-Item -LiteralPath $installers[0].FullName -NewName $releaseName
+          }
       - name: Create SHA-256 checksums
         shell: powershell
         run: |
@@ -168,6 +183,21 @@ jobs:
             $hash = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant()
             "$hash  $($_.Name)"
           } | Out-File -Encoding ascii release-assets/SHA256SUMS.txt
+      - name: Generate release manifest
+        shell: powershell
+        run: |
+          $installers = @(Get-ChildItem release-assets/*.exe)
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one installer for the release manifest, found $($installers.Count)."
+          }
+          $sourceCommit = (git rev-list -n 1 $env:RELEASE_TAG).Trim()
+          $publishedAt = [DateTimeOffset]::UtcNow.ToString("o")
+          npm run release:manifest -- `
+            --installer "$($installers[0].FullName)" `
+            --tag "$env:RELEASE_TAG" `
+            --source-commit "$sourceCommit" `
+            --published-at "$publishedAt" `
+            --output "release-assets/sylloop-release-v1.json"
       - uses: actions/attest-build-provenance@v2
         with:
           subject-path: release-assets/*
@@ -175,4 +205,4 @@ jobs:
         shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$env:RELEASE_TAG" release-assets/* --title "Echo Player $env:RELEASE_TAG" --generate-notes --verify-tag
+        run: gh release create "$env:RELEASE_TAG" release-assets/* --title "Sylloop $env:RELEASE_TAG" --generate-notes --verify-tag

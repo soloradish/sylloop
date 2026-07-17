@@ -1123,7 +1123,7 @@ pub fn run() {
             get_analysis_capability
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Echo Player");
+        .expect("error while running Sylloop");
 }
 
 #[cfg(test)]

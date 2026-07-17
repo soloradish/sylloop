@@ -24,12 +24,12 @@ describe("external link boundaries", () => {
   });
 
   it("chooses the project page from the application locale", () => {
-    expect(PROJECT_URL_ZH).toBe("https://lowid.me/zh/echo-player/");
-    expect(PROJECT_URL_EN).toBe("https://lowid.me/en/echo-player/");
-    expect(projectUrlForLocale("zh-CN")).toBe("https://lowid.me/zh/echo-player/");
-    expect(projectUrlForLocale("zh-Hant")).toBe("https://lowid.me/zh/echo-player/");
-    expect(projectUrlForLocale("en")).toBe("https://lowid.me/en/echo-player/");
-    expect(projectUrlForLocale("fr")).toBe("https://lowid.me/en/echo-player/");
+    expect(PROJECT_URL_ZH).toBe("https://lowid.me/zh/sylloop/");
+    expect(PROJECT_URL_EN).toBe("https://lowid.me/en/sylloop/");
+    expect(projectUrlForLocale("zh-CN")).toBe("https://lowid.me/zh/sylloop/");
+    expect(projectUrlForLocale("zh-Hant")).toBe("https://lowid.me/zh/sylloop/");
+    expect(projectUrlForLocale("en")).toBe("https://lowid.me/en/sylloop/");
+    expect(projectUrlForLocale("fr")).toBe("https://lowid.me/en/sylloop/");
   });
 
   it("uses the Tauri opener in the installed application", async () => {

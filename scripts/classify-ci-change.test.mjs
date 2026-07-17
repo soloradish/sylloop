@@ -13,15 +13,15 @@ function git(root, ...args) {
 }
 
 async function createRepository() {
-  const root = await mkdtemp(path.join(os.tmpdir(), "echo-ci-change-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "sylloop-ci-change-"));
   roots.push(root);
   await mkdir(path.join(root, "src-tauri", "src"), { recursive: true });
   await Promise.all([
-    writeFile(path.join(root, "package.json"), '{"name":"echo-player","version":"0.1.0","dependencies":{"react":"19.0.0"}}\n'),
-    writeFile(path.join(root, "package-lock.json"), '{"name":"echo-player","version":"0.1.0","lockfileVersion":3,"packages":{"":{"name":"echo-player","version":"0.1.0","dependencies":{"react":"19.0.0"}},"node_modules/react":{"version":"19.0.0"}}}\n'),
-    writeFile(path.join(root, "src-tauri", "Cargo.toml"), '[package]\nname = "echo-player"\nversion = "0.1.0"\nedition = "2021"\n\n[dependencies]\nserde = "1"\n'),
-    writeFile(path.join(root, "src-tauri", "Cargo.lock"), 'version = 4\n\n[[package]]\nname = "echo-player"\nversion = "0.1.0"\ndependencies = ["serde"]\n\n[[package]]\nname = "serde"\nversion = "1.0.0"\n'),
-    writeFile(path.join(root, "src-tauri", "tauri.conf.json"), '{"productName":"Echo Player","version":"0.1.0"}\n'),
+    writeFile(path.join(root, "package.json"), '{"name":"sylloop","version":"0.1.0","dependencies":{"react":"19.0.0"}}\n'),
+    writeFile(path.join(root, "package-lock.json"), '{"name":"sylloop","version":"0.1.0","lockfileVersion":3,"packages":{"":{"name":"sylloop","version":"0.1.0","dependencies":{"react":"19.0.0"}},"node_modules/react":{"version":"19.0.0"}}}\n'),
+    writeFile(path.join(root, "src-tauri", "Cargo.toml"), '[package]\nname = "sylloop"\nversion = "0.1.0"\nedition = "2021"\n\n[dependencies]\nserde = "1"\n'),
+    writeFile(path.join(root, "src-tauri", "Cargo.lock"), 'version = 4\n\n[[package]]\nname = "sylloop"\nversion = "0.1.0"\ndependencies = ["serde"]\n\n[[package]]\nname = "serde"\nversion = "1.0.0"\n'),
+    writeFile(path.join(root, "src-tauri", "tauri.conf.json"), '{"productName":"Sylloop","version":"0.1.0"}\n'),
     writeFile(path.join(root, "src-tauri", "src", "lib.rs"), "pub fn run() {}\n"),
     writeFile(path.join(root, "CHANGELOG.md"), "# Changelog\n\n## [Unreleased]\n"),
   ]);
@@ -103,7 +103,7 @@ describe("CI change classification", () => {
   it("uses full CI for unsynchronized or malformed version metadata", async () => {
     const { root, base } = await createRepository();
     await prepareRelease(root);
-    await writeFile(path.join(root, "src-tauri", "tauri.conf.json"), '{"productName":"Echo Player","version":"not-semver"}\n');
+    await writeFile(path.join(root, "src-tauri", "tauri.conf.json"), '{"productName":"Sylloop","version":"not-semver"}\n');
     const head = commit(root);
     await expect(classifyCiChange({ root, base, head, headRef: "codex/release-v0.2.0" })).resolves.toBe("full");
   });

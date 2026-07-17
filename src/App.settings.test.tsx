@@ -37,7 +37,7 @@ describe("settings modal", () => {
     fireEvent.click(settingsButton);
 
     const dialog = screen.getByRole("dialog", { name: "设置" });
-    expect(within(dialog).getByTestId("settings-version").textContent).toBe("Echo Player · 开发版本");
+    expect(within(dialog).getByTestId("settings-version").textContent).toBe("Sylloop · 开发版本");
     expect(within(dialog).queryByLabelText("音量")).toBeNull();
     expect(within(dialog).queryByLabelText("字幕偏移")).toBeNull();
     expect(within(dialog).queryByText("字幕")).toBeNull();
@@ -49,7 +49,7 @@ describe("settings modal", () => {
 
     expect(usePlayerStore.getState().preferences).toEqual({ volume: 0.85, speed: 1.25, loopGap: 1, language: "zh-CN", shortcuts: DEFAULT_SHORTCUTS });
     expect((document.querySelector("video") as HTMLVideoElement).playbackRate).toBe(1.25);
-    expect(JSON.parse(localStorage.getItem("echo-player-preferences") ?? "{}")).toMatchObject({ speed: 1.25, loopGap: 1 });
+    expect(JSON.parse(localStorage.getItem("sylloop-preferences") ?? "{}")).toMatchObject({ speed: 1.25, loopGap: 1 });
 
     fireEvent.click(within(dialog).getByRole("button", { name: "关闭设置" }));
     expect(screen.queryByRole("dialog", { name: "设置" })).toBeNull();
@@ -90,7 +90,7 @@ describe("settings modal", () => {
   });
 
   it("loads older saved preferences with the default loop gap", () => {
-    localStorage.setItem("echo-player-preferences", JSON.stringify({ volume: 0.4, speed: 1.5 }));
+    localStorage.setItem("sylloop-preferences", JSON.stringify({ volume: 0.4, speed: 1.5 }));
     usePlayerStore.setState({ preferences: loadPlayerPreferences(localStorage, ["zh-CN"]) });
     render(<App />);
 
@@ -145,7 +145,7 @@ describe("settings modal", () => {
     expect(screen.getByRole("dialog", { name: "Paramètres" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Liste de lecture · 3" })).toBeTruthy();
     expect(document.documentElement.lang).toBe("fr");
-    expect(JSON.parse(localStorage.getItem("echo-player-preferences") ?? "{}")).toMatchObject({ language: "fr" });
+    expect(JSON.parse(localStorage.getItem("sylloop-preferences") ?? "{}")).toMatchObject({ language: "fr" });
 
     fireEvent.change(screen.getByLabelText("Langue d’affichage"), { target: { value: "zh-Hant" } });
     expect(screen.getByRole("dialog", { name: "設定" })).toBeTruthy();
