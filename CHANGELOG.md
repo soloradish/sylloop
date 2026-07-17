@@ -4,6 +4,8 @@ All notable changes to Sylloop are documented here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-17
+
 - Fixed installed builds showing that the application version was unavailable.
 - Added a machine-readable release manifest for the lowid.me version and direct-download routes.
 - Renamed the application, installer, repository tooling, and delivery metadata from Echo Player to Sylloop with a new independent application identity.
@@ -29,6 +31,7 @@ All notable changes to Sylloop are documented here.
 - Bundled a pinned LGPL FFmpeg build for offline analysis.
 - Added native Windows E2E, dependency audits, and unsigned installer smoke tests.
 
-[Unreleased]: https://github.com/soloradish/sylloop/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/soloradish/sylloop/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/soloradish/sylloop/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/soloradish/sylloop/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/soloradish/sylloop/tree/v0.1.0
