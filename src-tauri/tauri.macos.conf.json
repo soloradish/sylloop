@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "targets": ["dmg"],
+    "resources": [
+      "resources/ffmpeg",
+      "resources/FFMPEG_LICENSE.txt"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  }
+}

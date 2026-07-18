@@ -155,8 +155,82 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  macos-test:
+    needs: classify
+    if: needs.classify.outputs.kind == 'full'
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 75
+    env:
+      CARGO_TERM_COLOR: always
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Restore pinned FFmpeg
+        id: macos-ffmpeg-cache
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          path: src-tauri/.cache/ffmpeg
+          key: ffmpeg-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ffmpeg-lock.json', 'scripts/prepare-ffmpeg.sh') }}
+      - name: Restore Cargo downloads
+        id: macos-cargo-download-cache
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-download-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+      - name: Install toolchains and dependencies
+        run: |
+          rustup show
+          npm ci
+      - name: Validate application version
+        run: npm run version:check
+      - name: Prepare pinned FFmpeg
+        run: npm run ffmpeg:prepare
+      - name: Test frontend
+        run: npm test
+      - name: Check Rust backend
+        working-directory: src-tauri
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets --locked -- -D warnings
+          cargo test --locked
+      - name: Build macOS DMG
+        run: npm run tauri:build
+      - name: Verify bundled FFmpeg and DMG
+        run: |
+          test -x src-tauri/resources/ffmpeg
+          src-tauri/resources/ffmpeg -version | head -n 1 | grep 'ffmpeg version 8.1.2'
+          test "$(find src-tauri/target/release/bundle/dmg -name '*.dmg' | wc -l | tr -d ' ')" = "1"
+      - name: Save pinned FFmpeg
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && steps.macos-ffmpeg-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: src-tauri/.cache/ffmpeg
+          key: ${{ steps.macos-ffmpeg-cache.outputs.cache-primary-key }}
+      - name: Save Cargo downloads
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && steps.macos-cargo-download-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ steps.macos-cargo-download-cache.outputs.cache-primary-key }}
+
   gate:
-    needs: [classify, windows-test]
+    needs: [classify, windows-test, macos-test]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -167,6 +241,7 @@ jobs:
           CLASSIFY_RESULT: ${{ needs.classify.result }}
           CHANGE_KIND: ${{ needs.classify.outputs.kind }}
           WINDOWS_RESULT: ${{ needs.windows-test.result }}
+          MACOS_RESULT: ${{ needs.macos-test.result }}
         run: |
           if [[ "$CLASSIFY_RESULT" != "success" ]]; then
             echo "Change classification or release metadata validation failed."
@@ -175,9 +250,11 @@ jobs:
           case "$CHANGE_KIND" in
             full)
               [[ "$WINDOWS_RESULT" == "success" ]] || exit 1
+              [[ "$MACOS_RESULT" == "success" ]] || exit 1
               ;;
             release-only)
               [[ "$WINDOWS_RESULT" == "skipped" ]] || exit 1
+              [[ "$MACOS_RESULT" == "skipped" ]] || exit 1
               ;;
             *)
               echo "Unknown change kind: $CHANGE_KIND"

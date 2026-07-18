@@ -24,6 +24,7 @@ const CACHE_SCHEMA_VERSION: u32 = 1;
 const CACHE_LIMIT_BYTES: u64 = 512 * 1024 * 1024;
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(100);
 const FFMPEG_STDERR_LIMIT: usize = 64 * 1024;
+#[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -577,10 +578,14 @@ fn read_bounded<R: Read>(mut reader: R, limit: usize) -> Vec<u8> {
 }
 
 fn bundled_ffmpeg_path(app: &AppHandle) -> Option<PathBuf> {
+    #[cfg(windows)]
+    let executable_name = "ffmpeg.exe";
+    #[cfg(not(windows))]
+    let executable_name = "ffmpeg";
     app.path()
         .resource_dir()
         .ok()
-        .map(|root| root.join("resources").join("ffmpeg.exe"))
+        .map(|root| root.join("resources").join(executable_name))
         .filter(|path| path.is_file())
 }
 
@@ -746,11 +751,9 @@ fn file_identity(path: &Path) -> Result<FileIdentity, CommandError> {
         .and_then(|modified| modified.duration_since(UNIX_EPOCH).ok())
         .map(|duration| duration.as_nanos().min(u64::MAX as u128) as u64)
         .unwrap_or_default();
-    let mut normalized = path.to_string_lossy().into_owned();
+    let normalized = path.to_string_lossy().into_owned();
     #[cfg(windows)]
-    {
-        normalized = normalized.to_lowercase();
-    }
+    let normalized = normalized.to_lowercase();
     let cache_key = format!("{:x}", Sha256::digest(normalized.as_bytes()));
     Ok(FileIdentity {
         path,
@@ -1211,8 +1214,12 @@ mod tests {
 
     #[test]
     fn unreadable_directory_falls_back_to_selected_file() {
-        let selected = Path::new("Z:\\definitely-missing\\lesson.mp3");
-        let items = list_directory_media_impl(selected);
+        let directory = tempfile::tempdir().unwrap();
+        let selected = directory
+            .path()
+            .join("definitely-missing")
+            .join("lesson.mp3");
+        let items = list_directory_media_impl(&selected);
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].name, "lesson.mp3");
     }

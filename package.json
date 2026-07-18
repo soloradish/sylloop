@@ -11,7 +11,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:tauri": "npm run ffmpeg:prepare && npm run build",
-    "ffmpeg:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-ffmpeg.ps1",
+    "ffmpeg:prepare": "node scripts/prepare-ffmpeg.mjs",
     "test": "vitest run",
     "version:set": "node scripts/version.mjs set",
     "version:check": "node scripts/version.mjs check",

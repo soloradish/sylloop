@@ -14,13 +14,20 @@ afterEach(async () => {
   }));
 });
 
-async function fixture(fileName = "Sylloop_1.2.3_x64-setup.exe") {
+async function fixture(fileNames = {
+  windows_x86_64: "Sylloop_1.2.3_x64-setup.exe",
+  macos_aarch64: "Sylloop_1.2.3_aarch64.dmg",
+  macos_x86_64: "Sylloop_1.2.3_x64.dmg",
+}) {
   const directory = await mkdtemp(path.join(tmpdir(), "sylloop-release-manifest-"));
   temporaryDirectories.push(directory);
-  const installerPath = path.join(directory, fileName);
   const bytes = Buffer.from("installer fixture");
-  await writeFile(installerPath, bytes);
-  return { directory, installerPath, bytes };
+  const assetPaths = {};
+  for (const [platform, fileName] of Object.entries(fileNames)) {
+    assetPaths[platform] = path.join(directory, fileName);
+    await writeFile(assetPaths[platform], bytes);
+  }
+  return { directory, assetPaths, bytes };
 }
 
 const validOptions = {
@@ -30,9 +37,9 @@ const validOptions = {
 };
 
 describe("release manifest generation", () => {
-  it("derives immutable release metadata from the installer", async () => {
-    const { installerPath, bytes } = await fixture();
-    const manifest = await createReleaseManifest({ installerPath, ...validOptions });
+  it("derives immutable release metadata from every platform package", async () => {
+    const { assetPaths, bytes } = await fixture();
+    const manifest = await createReleaseManifest({ assetPaths, ...validOptions });
 
     expect(manifest).toEqual({
       schemaVersion: 1,
@@ -52,14 +59,26 @@ describe("release manifest generation", () => {
           size: bytes.length,
           sha256: createHash("sha256").update(bytes).digest("hex"),
         },
+        macos_aarch64: {
+          fileName: "Sylloop_1.2.3_aarch64.dmg",
+          url: "https://github.com/soloradish/sylloop/releases/download/v1.2.3/Sylloop_1.2.3_aarch64.dmg",
+          size: bytes.length,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+        },
+        macos_x86_64: {
+          fileName: "Sylloop_1.2.3_x64.dmg",
+          url: "https://github.com/soloradish/sylloop/releases/download/v1.2.3/Sylloop_1.2.3_x64.dmg",
+          size: bytes.length,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+        },
       },
     });
   });
 
   it("writes a stable JSON asset name with a trailing newline", async () => {
-    const { directory, installerPath } = await fixture();
+    const { directory, assetPaths } = await fixture();
     const outputPath = path.join(directory, "assets", "sylloop-release-v1.json");
-    const { manifest } = await writeReleaseManifest({ installerPath, outputPath, ...validOptions });
+    const { manifest } = await writeReleaseManifest({ assetPaths, outputPath, ...validOptions });
     const text = await readFile(outputPath, "utf8");
 
     expect(text.endsWith("\n")).toBe(true);
@@ -73,12 +92,16 @@ describe("release manifest generation", () => {
     [validOptions.tag, validOptions.sourceCommit, "not-a-date", "RFC 3339"],
     [validOptions.tag, validOptions.sourceCommit, "2026-07-17", "RFC 3339"],
   ])("rejects invalid release identity", async (tag, sourceCommit, publishedAt, message) => {
-    const { installerPath } = await fixture();
-    await expect(createReleaseManifest({ installerPath, tag, sourceCommit, publishedAt })).rejects.toThrow(message);
+    const { assetPaths } = await fixture();
+    await expect(createReleaseManifest({ assetPaths, tag, sourceCommit, publishedAt })).rejects.toThrow(message);
   });
 
-  it("rejects installers whose filename does not match the release", async () => {
-    const { installerPath } = await fixture("Sylloop_1.2.2_x64-setup.exe");
-    await expect(createReleaseManifest({ installerPath, ...validOptions })).rejects.toThrow("canonical release name");
+  it("rejects assets whose filename does not match the release", async () => {
+    const { assetPaths } = await fixture({
+      windows_x86_64: "Sylloop_1.2.2_x64-setup.exe",
+      macos_aarch64: "Sylloop_1.2.3_aarch64.dmg",
+      macos_x86_64: "Sylloop_1.2.3_x64.dmg",
+    });
+    await expect(createReleaseManifest({ assetPaths, ...validOptions })).rejects.toThrow("canonical name");
   });
 });

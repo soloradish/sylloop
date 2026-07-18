@@ -10,6 +10,9 @@ export function sortPlaylist(items: PlaylistItem[]): PlaylistItem[] {
 }
 
 export function samePath(left: string, right: string): boolean {
+  if (left === right) return true;
+  const windowsPath = /^(?:[a-z]:[\\/]|\\\\)/i;
+  if (!windowsPath.test(left) || !windowsPath.test(right)) return false;
   return left.replaceAll("/", "\\").toLocaleLowerCase() === right.replaceAll("/", "\\").toLocaleLowerCase();
 }
 

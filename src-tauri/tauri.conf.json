@@ -35,18 +35,6 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis"
-    ],
-    "shortDescription": "A focused player for listening and repetition",
-    "resources": [
-      "resources/ffmpeg.exe",
-      "resources/FFMPEG_LICENSE.txt"
-    ],
-    "windows": {
-      "nsis": {
-        "installMode": "currentUser"
-      }
-    }
+    "shortDescription": "A focused player for listening and repetition"
   }
 }

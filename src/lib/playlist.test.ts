@@ -23,6 +23,11 @@ describe("playlist helpers", () => {
     expect(samePath("C:/COURSE/Lesson-2.mp3", "c:\\course\\lesson-2.mp3")).toBe(true);
     expect(playlistIndex(items, "c:/course/LESSON-2.mp3")).toBe(1);
   });
+
+  it("keeps POSIX paths case-sensitive", () => {
+    expect(samePath("/Users/student/Lesson.mp3", "/Users/student/lesson.mp3")).toBe(false);
+    expect(samePath("/Users/student/lesson.mp3", "/Users/student/lesson.mp3")).toBe(true);
+  });
 });
 
 describe("playlist store", () => {

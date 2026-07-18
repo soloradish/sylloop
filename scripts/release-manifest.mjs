@@ -37,22 +37,38 @@ function normalizePublishedAt(value) {
   return new Date(timestamp).toISOString();
 }
 
-export async function createReleaseManifest({ installerPath, tag, sourceCommit, publishedAt }) {
+const ASSET_SPECS = {
+  windows_x86_64: (version) => `Sylloop_${version}_x64-setup.exe`,
+  macos_aarch64: (version) => `Sylloop_${version}_aarch64.dmg`,
+  macos_x86_64: (version) => `Sylloop_${version}_x64.dmg`,
+};
+
+export async function createReleaseManifest({ assetPaths, tag, sourceCommit, publishedAt }) {
   const version = parseReleaseTag(tag);
   const normalizedCommit = sourceCommit?.toLowerCase();
   if (!SOURCE_COMMIT_PATTERN.test(normalizedCommit ?? "")) {
     throw new Error(`Source commit must be a full 40-character Git SHA: ${sourceCommit}`);
   }
 
-  const installer = await stat(installerPath);
-  if (!installer.isFile() || installer.size <= 0) {
-    throw new Error(`Installer must be a non-empty file: ${installerPath}`);
-  }
-
-  const fileName = path.basename(installerPath);
-  const expectedFileName = `Sylloop_${version}_x64-setup.exe`;
-  if (fileName !== expectedFileName) {
-    throw new Error(`Installer filename must be the canonical release name ${expectedFileName}: ${fileName}`);
+  const downloads = {};
+  for (const [platform, expectedName] of Object.entries(ASSET_SPECS)) {
+    const assetPath = assetPaths?.[platform];
+    if (!assetPath) throw new Error(`Missing release asset for ${platform}`);
+    const asset = await stat(assetPath);
+    if (!asset.isFile() || asset.size <= 0) {
+      throw new Error(`Release asset must be a non-empty file: ${assetPath}`);
+    }
+    const fileName = path.basename(assetPath);
+    const canonicalName = expectedName(version);
+    if (fileName !== canonicalName) {
+      throw new Error(`Release asset filename must be the canonical name ${canonicalName}: ${fileName}`);
+    }
+    downloads[platform] = {
+      fileName,
+      url: `${REPOSITORY_RELEASE_URL}/${encodeURIComponent(tag)}/${encodeURIComponent(fileName)}`,
+      size: asset.size,
+      sha256: await sha256File(assetPath),
+    };
   }
 
   return {
@@ -66,14 +82,7 @@ export async function createReleaseManifest({ installerPath, tag, sourceCommit, 
       zh: "https://lowid.me/zh/sylloop/",
       en: "https://lowid.me/en/sylloop/",
     },
-    downloads: {
-      windows_x86_64: {
-        fileName,
-        url: `${REPOSITORY_RELEASE_URL}/${encodeURIComponent(tag)}/${encodeURIComponent(fileName)}`,
-        size: installer.size,
-        sha256: await sha256File(installerPath),
-      },
-    },
+    downloads,
   };
 }
 
@@ -91,19 +100,23 @@ function parseCliArguments(args) {
     const name = args[index];
     const value = args[index + 1];
     if (!name?.startsWith("--") || value === undefined) {
-      throw new Error("Usage: release-manifest --installer PATH --tag vX.Y.Z --source-commit SHA --published-at RFC3339 --output PATH");
+      throw new Error("Usage: release-manifest --windows PATH --macos-aarch64 PATH --macos-x86-64 PATH --tag vX.Y.Z --source-commit SHA --published-at RFC3339 --output PATH");
     }
     values.set(name, value);
   }
 
-  const required = ["--installer", "--tag", "--source-commit", "--published-at", "--output"];
+  const required = ["--windows", "--macos-aarch64", "--macos-x86-64", "--tag", "--source-commit", "--published-at", "--output"];
   for (const name of required) {
     if (!values.has(name)) throw new Error(`Missing required argument ${name}`);
   }
   if (values.size !== required.length) throw new Error("Unknown or duplicate release manifest argument");
 
   return {
-    installerPath: path.resolve(values.get("--installer")),
+    assetPaths: {
+      windows_x86_64: path.resolve(values.get("--windows")),
+      macos_aarch64: path.resolve(values.get("--macos-aarch64")),
+      macos_x86_64: path.resolve(values.get("--macos-x86-64")),
+    },
     tag: values.get("--tag"),
     sourceCommit: values.get("--source-commit"),
     publishedAt: values.get("--published-at"),
@@ -114,7 +127,7 @@ function parseCliArguments(args) {
 async function main() {
   const { manifest, outputPath } = await writeReleaseManifest(parseCliArguments(process.argv.slice(2)));
   console.log(`Wrote ${outputPath}`);
-  console.log(`Sylloop ${manifest.version}: ${manifest.downloads.windows_x86_64.fileName}`);
+  console.log(`Sylloop ${manifest.version}: ${Object.keys(manifest.downloads).length} release assets`);
 }
 
 const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

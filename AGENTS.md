@@ -4,7 +4,7 @@
 
 These instructions apply to the entire Sylloop repository. They are the default operating rules for AI coding agents working here. Follow more specific instructions only if a future subdirectory contains its own `AGENTS.md`.
 
-Sylloop is a Windows-only Tauri 2 desktop application for language-learning playback. Preserve the existing product behavior unless a task explicitly changes it.
+Sylloop is a Windows and macOS Tauri 2 desktop application for language-learning playback. Preserve the existing product behavior unless a task explicitly changes it. Linux is not currently supported.
 
 ## Repository map
 
@@ -20,11 +20,11 @@ Sylloop is a Windows-only Tauri 2 desktop application for language-learning play
 | `src-tauri/capabilities/` | Production and generated E2E Tauri permissions |
 | `scripts/` | FFmpeg preparation, generated fixtures, E2E build, and installer smoke testing |
 | `e2e/` | Native Windows WebdriverIO tests and capabilities |
-| `.github/workflows/` | CI and release behavior; treat these files as executable release policy |
+| `.github/workflows/` | Windows/macOS CI and release behavior; treat these files as executable release policy |
 
 ## Toolchain and setup
 
-- Work on Windows and use PowerShell examples in repository documentation.
+- Work on Windows or macOS with the native Tauri prerequisites for that platform; keep commands portable where practical and document platform-specific shells explicitly.
 - Use Node.js 24.16.0 from `.nvmrc`/`package.json`.
 - Use Rust 1.96.0 with `rustfmt` and `clippy` from `rust-toolchain.toml`.
 - Install JavaScript dependencies with `npm ci`, not `npm install`, unless the task intentionally changes dependencies or the lockfile.
@@ -121,6 +121,7 @@ When changing this boundary:
 | Rust backend, analysis, playlist, or cache | Rust format, Clippy, and Rust tests |
 | IPC types or calls | Frontend tests/build plus Rust format, Clippy, and tests |
 | Tauri capabilities, asset scope, native file flow, FFmpeg integration, or E2E behavior | All frontend and Rust checks plus native Windows E2E |
+| macOS configuration, FFmpeg packaging, DMG, or release behavior | Frontend and Rust checks plus Apple Silicon and Intel macOS package builds and smoke tests |
 | Dependency or lockfile changes | Relevant builds/tests plus `npm audit --audit-level=high` and/or `cargo audit` |
 | Packaging, installer, or release workflow | Full CI-equivalent checks, production package build, and installer smoke test where available |
 

@@ -2,7 +2,7 @@
 
 # Sylloop
 
-Sylloop is a Windows desktop media player built for language-learning workflows that depend on quick replay and precise repetition. It works with local audio and video, generates a waveform and pause-based segments with FFmpeg, and provides several ways to repeat a segment or an arbitrary selection.
+Sylloop is a Windows and macOS desktop media player built for language-learning workflows that depend on quick replay and precise repetition. It works with local audio and video, generates a waveform and pause-based segments with FFmpeg, and provides several ways to repeat a segment or an arbitrary selection.
 
 ## Screenshots
 
@@ -32,19 +32,20 @@ Playlist discovery is intentionally non-recursive. Reaching the end of a media f
 
 - Windows 10 or Windows 11
 - Microsoft Edge WebView2 Runtime, which is normally included with supported Windows versions
+- macOS 11 or later on Apple Silicon or Intel
 
-Official installers include the pinned LGPL FFmpeg executable. They are currently unsigned, so Windows may display a SmartScreen warning. Obtain installers from [GitHub Releases](https://github.com/soloradish/sylloop/releases) and verify them with the published `SHA256SUMS.txt`.
+Official packages include a pinned LGPL FFmpeg executable. They are currently unsigned: Windows may display a SmartScreen warning, and macOS may initially block the app. On macOS, Control-click Sylloop in Finder and choose **Open** to confirm that you trust the downloaded app. Obtain packages from [GitHub Releases](https://github.com/soloradish/sylloop/releases) and verify them with the published `SHA256SUMS.txt`.
 
 ### Developing the application
 
-- Windows with the native build prerequisites required by Tauri 2
+- Windows or macOS with the native build prerequisites required by Tauri 2
 - Node.js 24.16.0, pinned in `.nvmrc` and `package.json`
 - Rust 1.96.0 with `rustfmt` and `clippy`, pinned in `rust-toolchain.toml`
-- PowerShell for the repository scripts
+- PowerShell on Windows or a POSIX shell on macOS
 
 ## Project page and feedback
 
-Visit the [Sylloop project page](https://lowid.me/en/sylloop/) for product and download information. Public problem reports and feature requests are handled through [GitHub Issues](https://github.com/soloradish/sylloop/issues/new/choose). A GitHub account is required; search existing issues first, include the application and Windows versions plus reproducible steps, and do not upload private media or sensitive information.
+Visit the [Sylloop project page](https://lowid.me/en/sylloop/) for product and download information. Public problem reports and feature requests are handled through [GitHub Issues](https://github.com/soloradish/sylloop/issues/new/choose). A GitHub account is required; search existing issues first, include the application and operating system versions plus reproducible steps, and do not upload private media or sensitive information.
 
 ## Architecture
 
@@ -55,7 +56,7 @@ Visit the [Sylloop project page](https://lowid.me/en/sylloop/) for product and d
 | Client state | Zustand | Playback state, analysis state, loop state, playlist state, and persisted preferences |
 | Native backend | Rust | File validation, directory playlists, FFmpeg execution, cancellation, and the analysis cache |
 | Analyzer | FFmpeg | Decode media to 16 kHz audio for waveform and pause-based segment detection |
-| Tests | Vitest + WebdriverIO | Frontend behavior, Rust logic, and native Windows end-to-end coverage |
+| Tests | Vitest + WebdriverIO | Frontend behavior, Rust logic, Windows end-to-end coverage, and macOS package smoke tests |
 
 ### Media and analysis flow
 
@@ -89,7 +90,7 @@ Rust response types use camelCase serialization to match their TypeScript counte
 | `src-tauri/capabilities/` | Tauri permissions for the production application |
 | `scripts/` | FFmpeg preparation, E2E fixture generation, E2E builds, and installer smoke tests |
 | `e2e/` | Native Windows WebdriverIO configuration, capabilities, fixtures, and specifications |
-| `.github/workflows/` | Windows CI and tagged release workflows |
+| `.github/workflows/` | Windows/macOS CI and tagged release workflows |
 
 Unit tests are colocated with the frontend modules they cover. Rust unit tests live in `src-tauri/src/lib.rs`, and native application tests live under `e2e/specs/`.
 
@@ -102,7 +103,7 @@ npm ci
 npm run ffmpeg:prepare
 ```
 
-The FFmpeg preparation script downloads the artifact recorded in `scripts/ffmpeg-lock.json`, verifies its SHA-256 digest, and rejects GPL or nonfree builds.
+The FFmpeg preparation script downloads the locked Windows artifact or official macOS source release, verifies its SHA-256 digest, and rejects GPL or nonfree builds.
 
 Start the native Tauri development application:
 
@@ -148,11 +149,11 @@ npm run test:e2e:tauri
 | `npm run version:check` | Verify that every application version source is synchronized |
 | `npm run version:check -- --tag vX.Y.Z` | Verify synchronized versions against a release tag |
 | `npm run version:set -- X.Y.Z` | Set a stable application version in every manifest and lockfile |
-| `npm run release:manifest -- --installer PATH --tag vX.Y.Z --source-commit SHA --published-at RFC3339 --output PATH` | Generate the validated website release manifest from an installer |
+| `npm run release:manifest -- --windows PATH --macos-aarch64 PATH --macos-x86-64 PATH --tag vX.Y.Z --source-commit SHA --published-at RFC3339 --output PATH` | Generate the validated website release manifest from all platform packages |
 | `npm run ffmpeg:prepare` | Download and verify the pinned FFmpeg artifact |
 | `npm run build:e2e` | Generate fixtures and build the E2E-enabled application |
 | `npm run test:e2e:tauri` | Run native Windows WebdriverIO tests |
-| `npm run tauri:build` | Build the production NSIS installer |
+| `npm run tauri:build` | Build the production NSIS installer or macOS DMG for the host platform |
 
 ## Making changes
 
@@ -188,7 +189,7 @@ cargo audit
 
 ## FFmpeg, cache, and application permissions
 
-The production package contains an unmodified, pinned LGPL build from BtbN FFmpeg Builds. The source, artifact URL, build source, version, and expected checksum are recorded in `scripts/ffmpeg-lock.json`. Developers can point source builds at a compatible executable through `FFMPEG_PATH`; official packages use the bundled executable.
+Windows packages contain an unmodified, pinned LGPL build from BtbN FFmpeg Builds. macOS packages contain an LGPL-only executable built on the matching architecture from the pinned official FFmpeg source release. The source and artifact URLs, versions, and expected checksums are recorded in `scripts/ffmpeg-lock.json`. Developers can point source builds at a compatible executable through `FFMPEG_PATH`; official packages use the bundled executable.
 
 Analysis results use a versioned cache in the application data directory. The settings dialog reports cache usage and can clear it when no analysis is active.
 
@@ -208,11 +209,11 @@ The skill does not modify the repository until its exact version and analyzed co
 
 `src-tauri/tauri.conf.json` is the authoritative product version. `npm run version:set -- X.Y.Z` synchronizes it with `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock`. Run `npm run version:check` before committing release changes.
 
-Every change enters `main` through a pull request protected by the required `CI / gate` check. Ordinary pull requests run the complete Windows CI suite. A standard `codex/release-vX.Y.Z` pull request takes the lightweight path only when its diff contains exactly the synchronized application-version fields and `CHANGELOG.md`; any other change falls back to the complete suite. Merging a checked pull request does not repeat CI on `main`.
+Every change enters `main` through a pull request protected by the required `CI / gate` check. Ordinary pull requests run the complete Windows suite plus native Apple Silicon and Intel macOS builds. A standard `codex/release-vX.Y.Z` pull request takes the lightweight path only when its diff contains exactly the synchronized application-version fields and `CHANGELOG.md`; any other change falls back to the complete suite. Merging a checked pull request does not repeat CI on `main`.
 
 CI restores trusted FFmpeg, Cargo-download, and E2E dependency caches but never depends on a cache hit. Run the CI workflow manually against `main` once after changing the Rust toolchain, dependency locks, or `scripts/ffmpeg-lock.json` to refresh the default-branch caches.
 
-After the release PR is merged, create and push an annotated `vX.Y.Z` tag on that `main` commit. The release workflow rejects mismatched versions, lightweight tags, tags outside `main`, and versions that already have a GitHub Release. It builds one unsigned NSIS installer on `windows-2022`, smoke-tests that same downloaded installer on both `windows-2022` and `windows-2025`, and publishes it with SHA-256 checksums, a machine-readable `sylloop-release-v1.json` manifest for lowid.me, and GitHub artifact attestation.
+After the release PR is merged, create and push an annotated `vX.Y.Z` tag on that `main` commit. The release workflow rejects mismatched versions, lightweight tags, tags outside `main`, and versions that already have a GitHub Release. It builds an unsigned Windows NSIS installer and separate unsigned Apple Silicon and Intel macOS DMGs, smoke-tests every downloaded package on its native architecture, and publishes them with SHA-256 checksums, an additive `sylloop-release-v1.json` manifest for lowid.me, and GitHub artifact attestation.
 
 Never move a published tag or replace published assets. Use **Re-run failed jobs** for a transient failure so successful build jobs and their installer artifact are reused. If the source must change, prepare the next patch version instead.
 

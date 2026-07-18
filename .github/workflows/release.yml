@@ -67,7 +67,7 @@ jobs:
             throw "A GitHub Release already exists for $env:RELEASE_TAG."
           }
 
-  build-installer:
+  build-windows:
     needs: validate-release
     runs-on: windows-2022
     timeout-minutes: 60
@@ -116,13 +116,68 @@ jobs:
           }
       - uses: actions/upload-artifact@v4
         with:
-          name: release-installer
+          name: release-windows
           path: src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: error
           overwrite: true
 
-  smoke-test-installer:
-    needs: build-installer
+  build-macos:
+    needs: validate-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: aarch64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 75
+    env:
+      CARGO_TERM_COLOR: always
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Restore pinned FFmpeg
+        uses: actions/cache/restore@v4
+        with:
+          path: src-tauri/.cache/ffmpeg
+          key: ffmpeg-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ffmpeg-lock.json', 'scripts/prepare-ffmpeg.sh') }}
+      - name: Restore Cargo downloads
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-download-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+      - name: Install toolchains and dependencies
+        run: |
+          rustup show
+          npm ci
+      - name: Prepare pinned FFmpeg
+        run: npm run ffmpeg:prepare
+      - name: Build unsigned macOS DMG
+        run: npm run tauri:build
+      - name: Validate DMG and bundled FFmpeg
+        run: |
+          test -x src-tauri/resources/ffmpeg
+          src-tauri/resources/ffmpeg -version | head -n 1 | grep 'ffmpeg version 8.1.2'
+          test "$(find src-tauri/target/release/bundle/dmg -name '*.dmg' | wc -l | tr -d ' ')" = "1"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-${{ matrix.arch }}
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+          overwrite: true
+
+  smoke-test-windows:
+    needs: build-windows
     strategy:
       fail-fast: false
       matrix:
@@ -135,7 +190,7 @@ jobs:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
       - uses: actions/download-artifact@v4
         with:
-          name: release-installer
+          name: release-windows
           path: release-assets
       - name: Smoke-test installation
         shell: powershell
@@ -146,8 +201,41 @@ jobs:
           }
           ./scripts/smoke-install.ps1 -Installer $installers[0].FullName
 
+  smoke-test-macos:
+    needs: build-macos
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: aarch64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-macos-${{ matrix.arch }}
+          path: release-assets
+      - name: Smoke-test DMG contents
+        run: |
+          dmg="$(find release-assets -name '*.dmg' -print -quit)"
+          test -n "$dmg"
+          mount_point="$(mktemp -d)"
+          hdiutil attach -nobrowse -readonly -mountpoint "$mount_point" "$dmg"
+          trap 'hdiutil detach "$mount_point"' EXIT
+          test -x "$mount_point/Sylloop.app/Contents/MacOS/sylloop"
+          test -x "$mount_point/Sylloop.app/Contents/Resources/resources/ffmpeg"
+          "$mount_point/Sylloop.app/Contents/Resources/resources/ffmpeg" -version | head -n 1 | grep 'ffmpeg version 8.1.2'
+          "$mount_point/Sylloop.app/Contents/MacOS/sylloop" &
+          app_pid=$!
+          sleep 5
+          kill -0 "$app_pid"
+          kill "$app_pid"
+
   publish:
-    needs: smoke-test-installer
+    needs: [smoke-test-windows, smoke-test-macos]
     runs-on: windows-2022
     permissions:
       contents: write
@@ -162,8 +250,16 @@ jobs:
           node-version-file: .nvmrc
       - uses: actions/download-artifact@v4
         with:
-          name: release-installer
+          name: release-windows
           path: release-assets
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-macos-aarch64
+          path: release-assets/macos-aarch64
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-macos-x86_64
+          path: release-assets/macos-x86_64
       - name: Normalize release asset filename
         shell: powershell
         run: |
@@ -176,24 +272,31 @@ jobs:
           if ($installers[0].Name -ne $releaseName) {
             Rename-Item -LiteralPath $installers[0].FullName -NewName $releaseName
           }
+          $macArm = @(Get-ChildItem release-assets/macos-aarch64/*.dmg)
+          $macIntel = @(Get-ChildItem release-assets/macos-x86_64/*.dmg)
+          if ($macArm.Count -ne 1 -or $macIntel.Count -ne 1) {
+            throw "Expected one DMG for each macOS architecture."
+          }
+          Move-Item -LiteralPath $macArm[0].FullName -Destination "release-assets/Sylloop_${version}_aarch64.dmg"
+          Move-Item -LiteralPath $macIntel[0].FullName -Destination "release-assets/Sylloop_${version}_x64.dmg"
+          Remove-Item -LiteralPath release-assets/macos-aarch64,release-assets/macos-x86_64 -Force
       - name: Create SHA-256 checksums
         shell: powershell
         run: |
-          Get-ChildItem release-assets/*.exe | ForEach-Object {
+          Get-ChildItem release-assets -File | Where-Object { $_.Extension -in '.exe', '.dmg' } | Sort-Object Name | ForEach-Object {
             $hash = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant()
             "$hash  $($_.Name)"
           } | Out-File -Encoding ascii release-assets/SHA256SUMS.txt
       - name: Generate release manifest
         shell: powershell
         run: |
-          $installers = @(Get-ChildItem release-assets/*.exe)
-          if ($installers.Count -ne 1) {
-            throw "Expected exactly one installer for the release manifest, found $($installers.Count)."
-          }
           $sourceCommit = (git rev-list -n 1 $env:RELEASE_TAG).Trim()
           $publishedAt = [DateTimeOffset]::UtcNow.ToString("o")
+          $version = $env:RELEASE_TAG.Substring(1)
           npm run release:manifest -- `
-            --installer "$($installers[0].FullName)" `
+            --windows "release-assets/Sylloop_${version}_x64-setup.exe" `
+            --macos-aarch64 "release-assets/Sylloop_${version}_aarch64.dmg" `
+            --macos-x86-64 "release-assets/Sylloop_${version}_x64.dmg" `
             --tag "$env:RELEASE_TAG" `
             --source-commit "$sourceCommit" `
             --published-at "$publishedAt" `

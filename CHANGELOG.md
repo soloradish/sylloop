@@ -4,6 +4,8 @@ All notable changes to Sylloop are documented here.
 
 ## [Unreleased]
 
+- Added official unsigned macOS 11+ DMGs for Apple Silicon and Intel, including bundled LGPL FFmpeg builds and native release smoke tests.
+
 ## [0.3.0] - 2026-07-17
 
 - Fixed installed builds showing that the application version was unavailable.

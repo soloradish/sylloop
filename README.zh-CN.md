@@ -2,7 +2,7 @@
 
 # Sylloop
 
-Sylloop 是一款面向 Windows 的桌面媒体播放器，专门服务于需要快速重听和精确循环的语言学习场景。它支持本地音视频，通过 FFmpeg 生成波形和基于停顿的片段，并提供多种片段或任意区间循环方式。
+Sylloop 是一款面向 Windows 和 macOS 的桌面媒体播放器，专门服务于需要快速重听和精确循环的语言学习场景。它支持本地音视频，通过 FFmpeg 生成波形和基于停顿的片段，并提供多种片段或任意区间循环方式。
 
 ## 界面截图
 
@@ -32,19 +32,20 @@ Sylloop 是一款面向 Windows 的桌面媒体播放器，专门服务于需要
 
 - Windows 10 或 Windows 11
 - Microsoft Edge WebView2 Runtime，受支持的 Windows 版本通常已经包含
+- Apple Silicon 或 Intel 处理器上的 macOS 11 或更高版本
 
-正式安装包包含锁定的 LGPL FFmpeg 可执行文件。安装包目前未进行代码签名，因此 Windows 可能显示 SmartScreen 警告。请从 [GitHub Releases](https://github.com/soloradish/sylloop/releases) 获取安装包，并使用发布的 `SHA256SUMS.txt` 进行校验。
+正式安装包包含锁定的 LGPL FFmpeg 可执行文件。安装包目前未进行代码签名：Windows 可能显示 SmartScreen 警告，macOS 可能在首次启动时拦截应用。在 macOS 上，请在 Finder 中按住 Control 点击 Sylloop，再选择**打开**并确认信任。请从 [GitHub Releases](https://github.com/soloradish/sylloop/releases) 获取安装包，并使用发布的 `SHA256SUMS.txt` 进行校验。
 
 ### 开发应用
 
-- Windows 以及 Tauri 2 所需的原生构建环境
+- Windows 或 macOS，以及 Tauri 2 所需的原生构建环境
 - Node.js 24.16.0，由 `.nvmrc` 和 `package.json` 固定
 - Rust 1.96.0，以及 `rustfmt` 和 `clippy`，由 `rust-toolchain.toml` 固定
-- 用于运行仓库脚本的 PowerShell
+- Windows 上的 PowerShell，或 macOS 上的 POSIX shell
 
 ## 项目主页与反馈
 
-访问 [Sylloop 项目主页](https://lowid.me/zh/sylloop/) 查看产品与下载信息。问题报告和功能建议通过公开的 [GitHub Issues](https://github.com/soloradish/sylloop/issues/new/choose) 处理。提交需要 GitHub 账号；请先搜索已有 Issue，提供应用版本、Windows 版本和可复现步骤，并且不要上传私人媒体或敏感信息。
+访问 [Sylloop 项目主页](https://lowid.me/zh/sylloop/) 查看产品与下载信息。问题报告和功能建议通过公开的 [GitHub Issues](https://github.com/soloradish/sylloop/issues/new/choose) 处理。提交需要 GitHub 账号；请先搜索已有 Issue，提供应用版本、操作系统版本和可复现步骤，并且不要上传私人媒体或敏感信息。
 
 ## 架构
 
@@ -55,7 +56,7 @@ Sylloop 是一款面向 Windows 的桌面媒体播放器，专门服务于需要
 | 客户端状态 | Zustand | 播放、分析、循环、播放列表状态和持久化偏好 |
 | 原生后端 | Rust | 文件校验、目录播放列表、FFmpeg 执行、取消分析和分析缓存 |
 | 分析器 | FFmpeg | 将媒体解码为 16 kHz 音频，用于生成波形和检测停顿片段 |
-| 测试 | Vitest + WebdriverIO | 前端行为、Rust 逻辑和 Windows 原生端到端测试 |
+| 测试 | Vitest + WebdriverIO | 前端行为、Rust 逻辑、Windows 原生端到端测试和 macOS 安装包冒烟测试 |
 
 ### 媒体与分析流程
 
@@ -89,7 +90,7 @@ Rust 响应类型使用 camelCase 序列化，与 `src/types.ts` 中的 TypeScri
 | `src-tauri/capabilities/` | 正式应用使用的 Tauri 权限 |
 | `scripts/` | FFmpeg 准备、E2E 测试素材生成、E2E 构建和安装包冒烟测试 |
 | `e2e/` | Windows 原生 WebdriverIO 配置、capability、测试素材和测试用例 |
-| `.github/workflows/` | Windows CI 和标签发布工作流 |
+| `.github/workflows/` | Windows/macOS CI 和标签发布工作流 |
 
 前端单元测试与被测模块放在一起。Rust 单元测试位于 `src-tauri/src/lib.rs`，原生应用测试位于 `e2e/specs/`。
 
@@ -102,7 +103,7 @@ npm ci
 npm run ffmpeg:prepare
 ```
 
-FFmpeg 准备脚本会下载 `scripts/ffmpeg-lock.json` 中记录的产物、校验其 SHA-256，并拒绝 GPL 或 nonfree 构建。
+FFmpeg 准备脚本会下载锁定的 Windows 产物或 macOS 官方源码版本、校验其 SHA-256，并拒绝 GPL 或 nonfree 构建。
 
 启动原生 Tauri 开发应用：
 
@@ -148,11 +149,11 @@ npm run test:e2e:tauri
 | `npm run version:check` | 检查所有应用版本来源是否同步 |
 | `npm run version:check -- --tag vX.Y.Z` | 检查同步版本是否与发布 tag 一致 |
 | `npm run version:set -- X.Y.Z` | 在所有清单和锁文件中设置稳定应用版本 |
-| `npm run release:manifest -- --installer PATH --tag vX.Y.Z --source-commit SHA --published-at RFC3339 --output PATH` | 根据安装包生成经校验的网站发布清单 |
+| `npm run release:manifest -- --windows PATH --macos-aarch64 PATH --macos-x86-64 PATH --tag vX.Y.Z --source-commit SHA --published-at RFC3339 --output PATH` | 根据全部平台安装包生成经校验的网站发布清单 |
 | `npm run ffmpeg:prepare` | 下载并校验锁定的 FFmpeg 产物 |
 | `npm run build:e2e` | 生成测试素材并构建启用 E2E 的应用 |
 | `npm run test:e2e:tauri` | 运行 Windows 原生 WebdriverIO 测试 |
-| `npm run tauri:build` | 构建正式 NSIS 安装包 |
+| `npm run tauri:build` | 根据宿主平台构建正式 NSIS 安装包或 macOS DMG |
 
 ## 进行修改
 
@@ -188,7 +189,7 @@ cargo audit
 
 ## FFmpeg、缓存与应用权限
 
-正式安装包包含来自 BtbN FFmpeg Builds 的未经修改、版本锁定的 LGPL 构建。源码、产物 URL、构建来源、版本和预期校验值都记录在 `scripts/ffmpeg-lock.json` 中。开发者可以通过 `FFMPEG_PATH` 让源码构建使用兼容的可执行文件；正式安装包使用内置文件。
+Windows 安装包包含来自 BtbN FFmpeg Builds 的未经修改、版本锁定的 LGPL 构建。macOS 安装包包含在对应架构上从锁定的 FFmpeg 官方源码版本构建的纯 LGPL 可执行文件。源码与产物 URL、版本和预期校验值都记录在 `scripts/ffmpeg-lock.json` 中。开发者可以通过 `FFMPEG_PATH` 让源码构建使用兼容的可执行文件；正式安装包使用内置文件。
 
 分析结果使用应用数据目录中的版本化缓存。设置对话框会显示缓存用量，并允许在没有分析任务运行时清理缓存。
 
@@ -208,11 +209,11 @@ $bump-sylloop-version 分析 main 并推荐 Sylloop 的下一个版本。
 
 `src-tauri/tauri.conf.json` 是产品版本的权威来源。`npm run version:set -- X.Y.Z` 会将其与 `package.json`、`package-lock.json`、`src-tauri/Cargo.toml` 和 `src-tauri/Cargo.lock` 同步。提交发布改动前运行 `npm run version:check`。
 
-所有改动都通过受必需检查 `CI / gate` 保护的 PR 进入 `main`。普通 PR 会运行完整的 Windows CI。标准的 `codex/release-vX.Y.Z` PR 只有在 diff 恰好包含同步后的应用版本字段和 `CHANGELOG.md` 时才走轻量路径；任何其他改动都会回退到完整检查。已通过检查的 PR 合并后不会在 `main` 上重复运行 CI。
+所有改动都通过受必需检查 `CI / gate` 保护的 PR 进入 `main`。普通 PR 会运行完整的 Windows 检查，以及 Apple Silicon 和 Intel macOS 原生构建。标准的 `codex/release-vX.Y.Z` PR 只有在 diff 恰好包含同步后的应用版本字段和 `CHANGELOG.md` 时才走轻量路径；任何其他改动都会回退到完整检查。已通过检查的 PR 合并后不会在 `main` 上重复运行 CI。
 
 CI 会恢复可信的 FFmpeg、Cargo 下载和 E2E 依赖缓存，但绝不依赖缓存命中来保证正确性。Rust toolchain、依赖锁文件或 `scripts/ffmpeg-lock.json` 发生变化后，在 `main` 上手动运行一次 CI workflow，以刷新默认分支缓存。
 
-发布 PR 合并后，在该 `main` 提交上创建并推送 annotated `vX.Y.Z` tag。发布工作流会拒绝版本不一致、轻量 tag、未包含在 `main` 中的 tag，以及已经存在 GitHub Release 的版本。随后它只在 `windows-2022` 上构建一次未签名的 NSIS 安装包，将下载得到的同一个安装包分别在 `windows-2022` 和 `windows-2025` 上静默安装、启动和卸载，并发布该产物、SHA-256 校验和、供 lowid.me 使用的机器可读 `sylloop-release-v1.json` 清单及 GitHub artifact attestation。
+发布 PR 合并后，在该 `main` 提交上创建并推送 annotated `vX.Y.Z` tag。发布工作流会拒绝版本不一致、轻量 tag、未包含在 `main` 中的 tag，以及已经存在 GitHub Release 的版本。随后它会构建未签名的 Windows NSIS 安装包，以及分别面向 Apple Silicon 和 Intel 的两个未签名 macOS DMG；每个下载后的安装包都会在对应原生架构上接受冒烟测试，随后与 SHA-256 校验和、供 lowid.me 使用的增量兼容 `sylloop-release-v1.json` 清单及 GitHub artifact attestation 一起发布。
 
 不要移动已发布 tag 或替换已发布附件。临时故障应使用 **Re-run failed jobs**，以复用已经成功的构建 job 及其安装包 artifact；如果必须修改源码，则准备下一个 patch 版本。
 
