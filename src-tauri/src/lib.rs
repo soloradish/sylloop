@@ -1214,8 +1214,12 @@ mod tests {
 
     #[test]
     fn unreadable_directory_falls_back_to_selected_file() {
-        let selected = Path::new("Z:\\definitely-missing\\lesson.mp3");
-        let items = list_directory_media_impl(selected);
+        let directory = tempfile::tempdir().unwrap();
+        let selected = directory
+            .path()
+            .join("definitely-missing")
+            .join("lesson.mp3");
+        let items = list_directory_media_impl(&selected);
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].name, "lesson.mp3");
     }
