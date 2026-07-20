@@ -162,7 +162,7 @@ jobs:
           npm ci
       - name: Prepare pinned FFmpeg
         run: npm run ffmpeg:prepare
-      - name: Build unsigned macOS DMG
+      - name: Build ad-hoc-signed, unnotarized macOS DMG
         run: npm run tauri:build
       - name: Validate DMG and bundled FFmpeg
         run: |
@@ -214,34 +214,18 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
       - uses: actions/download-artifact@v4
         with:
           name: release-macos-${{ matrix.arch }}
           path: release-assets
-      - name: Smoke-test DMG contents
+      - name: Smoke-test signed DMG
         run: |
+          test "$(find release-assets -name '*.dmg' | wc -l | tr -d ' ')" = "1"
           dmg="$(find release-assets -name '*.dmg' -print -quit)"
-          test -n "$dmg"
-          mount_point="$(mktemp -d)"
-          hdiutil attach -nobrowse -readonly -mountpoint "$mount_point" "$dmg"
-          trap 'hdiutil detach "$mount_point"' EXIT
-          test -x "$mount_point/Sylloop.app/Contents/MacOS/sylloop"
-          resource_dir="$mount_point/Sylloop.app/Contents/Resources/resources"
-          test -x "$resource_dir/ffmpeg"
-          metadata="$resource_dir/FFMPEG_BUILD_INFO.json"
-          test -f "$metadata"
-          grep -q '"profile": "core"' "$metadata"
-          grep -q '"target": "macos-${{ matrix.arch }}"' "$metadata"
-          for license in FFmpeg-COPYING.LGPLv2.1 FFmpeg-COPYING.LGPLv3 FFmpeg-LICENSE.md; do
-            test -f "$resource_dir/FFMPEG_LICENSES/$license"
-          done
-          version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["ffmpegVersion"])' "$metadata")"
-          "$resource_dir/ffmpeg" -version | head -n 1 | grep "ffmpeg version $version"
-          "$mount_point/Sylloop.app/Contents/MacOS/sylloop" &
-          app_pid=$!
-          sleep 5
-          kill -0 "$app_pid"
-          kill "$app_pid"
+          bash scripts/smoke-macos-dmg.sh "$dmg" "macos-${{ matrix.arch }}"
 
   publish:
     needs: [smoke-test-windows, smoke-test-macos]

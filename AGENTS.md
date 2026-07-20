@@ -167,4 +167,4 @@ Do not use browser demo mode as evidence that native file access, Tauri IPC, FFm
 - Keep versions identical in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json`.
 - Update `CHANGELOG.md` for user-visible release changes.
 - Do not create or push a `v*` release tag until the complete CI gate passes.
-- Official packages remain unsigned unless the release policy is explicitly changed. Preserve checksum generation and build provenance attestation.
+- Windows packages remain unsigned. macOS packages are ad-hoc signed but not Developer ID-signed or notarized. Preserve checksum generation and build provenance attestation.

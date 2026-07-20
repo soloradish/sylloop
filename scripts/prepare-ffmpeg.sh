@@ -81,6 +81,19 @@ if [[ "$stage_required" == true ]]; then
   chmod 755 "$output"
 fi
 
+is_ad_hoc_signed() {
+  local executable="$1"
+  local signature_details
+  codesign --verify --strict "$executable" >/dev/null 2>&1 || return 1
+  signature_details="$(codesign --display --verbose=4 "$executable" 2>&1)" || return 1
+  grep -q '^Signature=adhoc$' <<<"$signature_details"
+}
+
+if ! is_ad_hoc_signed "$output"; then
+  codesign --force --sign - "$output"
+fi
+codesign --verify --strict --verbose=2 "$output"
+
 rm -f "$legacy_license"
 node "$root/scripts/verify-ffmpeg-resource.mjs" \
   --directory "$resources" --layout resource --target "$target"

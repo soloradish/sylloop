@@ -205,13 +205,14 @@ jobs:
           cargo fmt --all -- --check
           cargo clippy --all-targets --locked -- -D warnings
           cargo test --locked
-      - name: Build macOS DMG
+      - name: Build ad-hoc-signed, unnotarized macOS DMG
         run: npm run tauri:build
-      - name: Verify bundled FFmpeg and DMG
+      - name: Smoke-test signed DMG
         run: |
           if [[ "$(uname -m)" == "arm64" ]]; then target="macos-aarch64"; else target="macos-x86_64"; fi
-          node scripts/verify-ffmpeg-resource.mjs --directory src-tauri/resources --layout resource --target "$target"
           test "$(find src-tauri/target/release/bundle/dmg -name '*.dmg' | wc -l | tr -d ' ')" = "1"
+          dmg="$(find src-tauri/target/release/bundle/dmg -name '*.dmg' -print -quit)"
+          bash scripts/smoke-macos-dmg.sh "$dmg" "$target"
       - name: Save pinned FFmpeg
         if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && steps.macos-ffmpeg-cache.outputs.cache-hit != 'true'
         continue-on-error: true

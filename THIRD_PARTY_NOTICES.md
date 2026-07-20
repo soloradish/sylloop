@@ -4,7 +4,7 @@ Sylloop is distributed under the MIT License and includes third-party components
 
 ## FFmpeg
 
-Windows, Apple Silicon, and Intel macOS packages include unmodified `core`-profile FFmpeg executables produced by the independent, unofficial [soloradish/ffmpeg-dist](https://github.com/soloradish/ffmpeg-dist) distribution. The pinned release, architecture-specific artifacts, build provenance, and SHA-256 checksums are recorded in `scripts/ffmpeg-lock.json`. Each build is verified as `LGPL-2.1-or-later`, with networking, GPL, nonfree, and version3 components disabled. Its complete `LICENSES/` directory and `BUILD-INFO.json` are included in the application resources.
+Windows, Apple Silicon, and Intel macOS packages include pinned `core`-profile FFmpeg executables produced by the independent, unofficial [soloradish/ffmpeg-dist](https://github.com/soloradish/ffmpeg-dist) distribution. The pinned release, architecture-specific artifacts, build provenance, and SHA-256 checksums are recorded in `scripts/ffmpeg-lock.json`; macOS packaging applies an ad-hoc code signature after verifying the pinned executable. Each build is verified as `LGPL-2.1-or-later`, with networking, GPL, nonfree, and version3 components disabled. Its complete `LICENSES/` directory and `BUILD-INFO.json` are included in the application resources.
 
 - Distribution release: https://github.com/soloradish/ffmpeg-dist/releases/tag/v8.1.2-r1
 - Exact corresponding-source bundle: https://github.com/soloradish/ffmpeg-dist/releases/download/v8.1.2-r1/ffmpeg-8.1.2-r1-sources.tar.xz

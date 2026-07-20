@@ -35,7 +35,7 @@ Playlist discovery is intentionally non-recursive. Reaching the end of a media f
 - Microsoft Edge WebView2 Runtime, which is normally included with supported Windows versions
 - macOS 11 or later on Apple Silicon or Intel
 
-Official packages include a pinned LGPL FFmpeg executable. They are currently unsigned: Windows may display a SmartScreen warning, and macOS may initially block the app. On macOS, Control-click Sylloop in Finder and choose **Open** to confirm that you trust the downloaded app. Obtain packages from [GitHub Releases](https://github.com/soloradish/sylloop/releases), verify them with the published `SHA256SUMS.txt`, and use the [exact FFmpeg corresponding-source bundle](https://github.com/soloradish/ffmpeg-dist/releases/download/v8.1.2-r1/ffmpeg-8.1.2-r1-sources.tar.xz) when rebuilding the bundled analyzer.
+Official packages include a pinned LGPL FFmpeg executable. The Windows installer is unsigned and may display a SmartScreen warning. The macOS app and bundled FFmpeg use ad-hoc signatures, but they are not Developer ID-signed or notarized, so macOS may initially block the app. On macOS, Control-click Sylloop in Finder and choose **Open**; if it remains blocked, open **System Settings > Privacy & Security** and choose **Open Anyway**. Obtain packages from [GitHub Releases](https://github.com/soloradish/sylloop/releases), verify them with the published `SHA256SUMS.txt`, and use the [exact FFmpeg corresponding-source bundle](https://github.com/soloradish/ffmpeg-dist/releases/download/v8.1.2-r1/ffmpeg-8.1.2-r1-sources.tar.xz) when rebuilding the bundled analyzer.
 
 ### Developing the application
 
@@ -190,7 +190,7 @@ cargo audit
 
 ## FFmpeg, cache, and application permissions
 
-The Windows, Apple Silicon, and Intel macOS packages contain unmodified, pinned `core` builds from the independent, unofficial [soloradish/ffmpeg-dist](https://github.com/soloradish/ffmpeg-dist) distribution. The exact release, architecture-specific artifact URLs, corresponding-source bundle, build provenance, version, and expected checksums are recorded in `scripts/ffmpeg-lock.json`. Preparation verifies the archive, `BUILD-INFO.json`, executable architecture, version, and LGPL-compatible profile, then packages the complete license directory. Developers can point source builds at a compatible executable through `FFMPEG_PATH`; official packages use the bundled executable.
+The Windows, Apple Silicon, and Intel macOS packages contain pinned `core` builds from the independent, unofficial [soloradish/ffmpeg-dist](https://github.com/soloradish/ffmpeg-dist) distribution. The exact release, architecture-specific artifact URLs, corresponding-source bundle, build provenance, version, and expected checksums are recorded in `scripts/ffmpeg-lock.json`. Preparation verifies the archive, `BUILD-INFO.json`, executable architecture, version, and LGPL-compatible profile, then packages the complete license directory; macOS preparation additionally applies an ad-hoc code signature to the verified FFmpeg executable. Developers can point source builds at a compatible executable through `FFMPEG_PATH`; official packages use the bundled executable.
 
 Analysis results use a versioned cache in the application data directory. The settings dialog reports cache usage and can clear it when no analysis is active.
 
@@ -214,7 +214,7 @@ Every change enters `main` through a pull request protected by the required `CI 
 
 CI restores trusted FFmpeg, Cargo-download, and E2E dependency caches but never depends on a cache hit. Run the CI workflow manually against `main` once after changing the Rust toolchain, dependency locks, or `scripts/ffmpeg-lock.json` to refresh the default-branch caches.
 
-After the release PR is merged, create and push an annotated `vX.Y.Z` tag on that `main` commit. The release workflow rejects mismatched versions, lightweight tags, tags outside `main`, and versions that already have a GitHub Release. It builds an unsigned Windows NSIS installer and separate unsigned Apple Silicon and Intel macOS DMGs, smoke-tests every downloaded package on its native architecture, and publishes them with SHA-256 checksums, an additive `sylloop-release-v1.json` manifest for lowid.me, and GitHub artifact attestation.
+After the release PR is merged, create and push an annotated `vX.Y.Z` tag on that `main` commit. The release workflow rejects mismatched versions, lightweight tags, tags outside `main`, and versions that already have a GitHub Release. It builds an unsigned Windows NSIS installer and separate ad-hoc-signed, unnotarized Apple Silicon and Intel macOS DMGs, verifies the application and FFmpeg signatures, smoke-tests every downloaded package on its native architecture, and publishes them with SHA-256 checksums, an additive `sylloop-release-v1.json` manifest for lowid.me, and GitHub artifact attestation.
 
 Never move a published tag or replace published assets. Use **Re-run failed jobs** for a transient failure so successful build jobs and their installer artifact are reused. If the source must change, prepare the next patch version instead.
 

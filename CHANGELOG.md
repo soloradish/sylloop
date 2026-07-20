@@ -4,6 +4,8 @@ All notable changes to Sylloop are documented here.
 
 ## [Unreleased]
 
+- Fixed downloaded macOS builds being reported as damaged by ad-hoc signing the app and bundled FFmpeg, with native signature checks in CI and release smoke tests.
+
 ## [0.5.0] - 2026-07-20
 
 - Switched the bundled analyzer on Windows and macOS to pinned `core` builds from `soloradish/ffmpeg-dist`, including exact build metadata and complete FFmpeg license files.
