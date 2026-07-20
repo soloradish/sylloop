@@ -7,14 +7,26 @@ describe("player store boundaries", () => {
 
   it("rejects malformed or out-of-range persisted preferences", () => {
     const storage = {
-      getItem: () => JSON.stringify({ volume: 4, speed: 0.1, loopGap: 99, language: "invalid" }),
+      getItem: () => JSON.stringify({ volume: 4, speed: 0.1, loopGap: 99, windowOpacity: 0.2, alwaysOnTop: "yes", language: "invalid" }),
     };
     expect(loadPlayerPreferences(storage, ["en-US"])).toEqual({
       volume: 0.85,
       speed: 1,
       loopGap: 0,
+      windowOpacity: 1,
+      alwaysOnTop: false,
       language: "en",
       shortcuts: DEFAULT_SHORTCUTS,
+    });
+  });
+
+  it("loads valid persisted window preferences", () => {
+    const storage = {
+      getItem: () => JSON.stringify({ windowOpacity: 0.65, alwaysOnTop: true }),
+    };
+    expect(loadPlayerPreferences(storage, ["en-US"])).toMatchObject({
+      windowOpacity: 0.65,
+      alwaysOnTop: true,
     });
   });
 

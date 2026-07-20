@@ -29,7 +29,10 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: mocks.open }));
 vi.mock("@tauri-apps/api/webviewWindow", () => ({
-  getCurrentWebviewWindow: () => ({ onDragDropEvent: () => Promise.resolve(() => {}) }),
+  getCurrentWebviewWindow: () => ({
+    onDragDropEvent: () => Promise.resolve(() => {}),
+    setAlwaysOnTop: () => Promise.resolve(),
+  }),
 }));
 
 const waveform: WaveformData = {
@@ -93,7 +96,7 @@ beforeEach(() => {
     error: null,
     playlist: [],
     currentPlaylistIndex: -1,
-    preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "en", shortcuts: { ...DEFAULT_SHORTCUTS } },
+    preferences: { volume: 0.85, speed: 1, loopGap: 0, windowOpacity: 1, alwaysOnTop: false, language: "en", shortcuts: { ...DEFAULT_SHORTCUTS } },
   });
 });
 

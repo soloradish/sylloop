@@ -3408,6 +3408,7 @@ name = "sylloop"
 version = "0.4.0"
 dependencies = [
  "approx",
+ "objc2-app-kit",
  "serde",
  "serde_json",
  "sha2",
@@ -3419,6 +3420,7 @@ dependencies = [
  "tauri-plugin-wdio-webdriver",
  "tempfile",
  "thiserror 2.0.18",
+ "windows",
 ]
 
 [[package]]

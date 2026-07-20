@@ -35,6 +35,8 @@ describe("locale detection", () => {
       volume: 0.4,
       speed: 1.5,
       loopGap: 0.5,
+      windowOpacity: 1,
+      alwaysOnTop: false,
       language: "zh-Hant",
       shortcuts: DEFAULT_SHORTCUTS,
     });
@@ -44,6 +46,8 @@ describe("locale detection", () => {
       volume: 0.3,
       speed: 1.25,
       loopGap: 0,
+      windowOpacity: 1,
+      alwaysOnTop: false,
       language: "fr",
       shortcuts: DEFAULT_SHORTCUTS,
     });
@@ -54,6 +58,8 @@ describe("locale detection", () => {
       volume: 0.85,
       speed: 1,
       loopGap: 0,
+      windowOpacity: 1,
+      alwaysOnTop: false,
       language: "en",
       shortcuts: DEFAULT_SHORTCUTS,
     });
@@ -61,6 +67,8 @@ describe("locale detection", () => {
       volume: 0.85,
       speed: 1,
       loopGap: 0,
+      windowOpacity: 1,
+      alwaysOnTop: false,
       language: "zh-Hant",
       shortcuts: DEFAULT_SHORTCUTS,
     });
@@ -70,6 +78,11 @@ describe("locale detection", () => {
 function FormattingProbe() {
   const { formatFileCount, formatSeconds, t } = useI18n();
   return <div>{t("top.settings")}|{formatFileCount(2)}|{formatSeconds(0.5)}</div>;
+}
+
+function WindowLabelsProbe() {
+  const { t } = useI18n();
+  return <div>{t("settings.windowOpacity")}|{t("settings.alwaysOnTop")}|{t("top.pinWindow")}</div>;
 }
 
 describe("localized formatting", () => {
@@ -82,5 +95,15 @@ describe("localized formatting", () => {
     render(<I18nProvider locale={locale}><FormattingProbe /></I18nProvider>);
     expect(screen.getByText(expected)).toBeTruthy();
     expect(document.documentElement.lang).toBe(locale);
+  });
+
+  it.each([
+    ["zh-CN", "窗口透明度|始终置顶|将窗口固定在最前"],
+    ["zh-Hant", "視窗透明度|永遠置頂|將視窗固定在最前方"],
+    ["en", "Window opacity|Always on top|Keep window on top"],
+    ["fr", "Opacité de la fenêtre|Toujours au premier plan|Garder la fenêtre au premier plan"],
+  ] as Array<[AppLocale, string]>) ("localizes window settings for %s", (locale, expected) => {
+    render(<I18nProvider locale={locale}><WindowLabelsProbe /></I18nProvider>);
+    expect(screen.getByText(expected)).toBeTruthy();
   });
 });

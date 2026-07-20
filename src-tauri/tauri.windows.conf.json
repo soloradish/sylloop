@@ -4,7 +4,8 @@
     "targets": ["nsis"],
     "resources": [
       "resources/ffmpeg.exe",
-      "resources/FFMPEG_LICENSE.txt"
+      "resources/FFMPEG_BUILD_INFO.json",
+      "resources/FFMPEG_LICENSES/"
     ],
     "windows": {
       "nsis": {

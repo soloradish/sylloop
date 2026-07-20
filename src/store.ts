@@ -7,7 +7,13 @@ import { DEFAULT_SHORTCUTS, loadShortcutBindings } from "./lib/shortcuts";
 
 export const PREFERENCES_STORAGE_KEY = "sylloop-preferences";
 
-const BASE_PREFERENCES = { volume: 0.85, speed: 1, loopGap: 0 } as const;
+const BASE_PREFERENCES = {
+  volume: 0.85,
+  speed: 1,
+  loopGap: 0,
+  windowOpacity: 1,
+  alwaysOnTop: false,
+} as const;
 const LOOP_GAPS = new Set([0, 0.5, 1, 2]);
 
 function finiteNumber(value: unknown, fallback: number, isValid: (value: number) => boolean): number {
@@ -31,6 +37,8 @@ export function loadPlayerPreferences(
     volume: finiteNumber(saved.volume, BASE_PREFERENCES.volume, (value) => value >= 0 && value <= 1),
     speed: finiteNumber(saved.speed, BASE_PREFERENCES.speed, (value) => value >= 0.5 && value <= 2),
     loopGap: finiteNumber(saved.loopGap, BASE_PREFERENCES.loopGap, (value) => LOOP_GAPS.has(value)),
+    windowOpacity: finiteNumber(saved.windowOpacity, BASE_PREFERENCES.windowOpacity, (value) => value >= 0.4 && value <= 1),
+    alwaysOnTop: typeof saved.alwaysOnTop === "boolean" ? saved.alwaysOnTop : BASE_PREFERENCES.alwaysOnTop,
     language: isAppLocale(saved.language) ? saved.language : detectLocale(languages),
     shortcuts: loadShortcutBindings(saved.shortcuts),
   };

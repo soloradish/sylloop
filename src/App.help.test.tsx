@@ -23,7 +23,10 @@ vi.mock("@tauri-apps/api/core", () => ({
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: mocks.openDialog }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: mocks.openUrl }));
 vi.mock("@tauri-apps/api/webviewWindow", () => ({
-  getCurrentWebviewWindow: () => ({ onDragDropEvent: () => Promise.resolve(() => {}) }),
+  getCurrentWebviewWindow: () => ({
+    onDragDropEvent: () => Promise.resolve(() => {}),
+    setAlwaysOnTop: () => Promise.resolve(),
+  }),
 }));
 
 beforeAll(() => {
@@ -52,7 +55,7 @@ beforeEach(() => {
   mocks.openUrl.mockReset();
   mocks.openUrl.mockResolvedValue(undefined);
   usePlayerStore.setState({
-    preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "en", shortcuts: { ...DEFAULT_SHORTCUTS } },
+    preferences: { volume: 0.85, speed: 1, loopGap: 0, windowOpacity: 1, alwaysOnTop: false, language: "en", shortcuts: { ...DEFAULT_SHORTCUTS } },
     error: null,
   });
 });

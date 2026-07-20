@@ -12,6 +12,8 @@ interface SettingsModalProps {
   language: AppLocale;
   speed: number;
   loopGap: number;
+  windowOpacity: number;
+  alwaysOnTop: boolean;
   shortcuts: ShortcutBindings;
   cacheStats: CacheStats | null;
   cacheClearing: boolean;
@@ -19,6 +21,8 @@ interface SettingsModalProps {
   onLanguageChange: (language: AppLocale) => void;
   onSpeedChange: (speed: number) => void;
   onLoopGapChange: (gap: number) => void;
+  onWindowOpacityChange: (opacity: number) => void;
+  onAlwaysOnTopChange: (alwaysOnTop: boolean) => void;
   onShortcutChange: (action: ShortcutAction, shortcut: string) => void;
   onResetPreferences: () => void;
   onClearCache: () => void;
@@ -31,6 +35,8 @@ export function SettingsModal({
   language,
   speed,
   loopGap,
+  windowOpacity,
+  alwaysOnTop,
   shortcuts,
   cacheStats,
   cacheClearing,
@@ -38,12 +44,15 @@ export function SettingsModal({
   onLanguageChange,
   onSpeedChange,
   onLoopGapChange,
+  onWindowOpacityChange,
+  onAlwaysOnTopChange,
   onShortcutChange,
   onResetPreferences,
   onClearCache,
   onClose,
 }: SettingsModalProps) {
   const { t, formatNumber, formatSeconds } = useI18n();
+  const windowOpacityPercent = Math.round(windowOpacity * 100);
   const panelRef = useRef<HTMLElement>(null);
   const firstControlRef = useRef<HTMLSelectElement>(null);
   const [recordingAction, setRecordingAction] = useState<ShortcutAction | null>(null);
@@ -153,6 +162,39 @@ export function SettingsModal({
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
+            </label>
+          </fieldset>
+
+          <fieldset className="settings-group settings-window-group">
+            <legend>{t("settings.windowGroup")}</legend>
+            <label htmlFor="settings-window-opacity">
+              <span><strong>{t("settings.windowOpacity")}</strong><small>{t("settings.windowOpacityDescription")}</small></span>
+              <span className="settings-opacity-control">
+                <input
+                  id="settings-window-opacity"
+                  type="range"
+                  min="40"
+                  max="100"
+                  step="5"
+                  value={windowOpacityPercent}
+                  aria-label={t("settings.windowOpacity")}
+                  aria-valuetext={t("settings.windowOpacityValue", { percent: formatNumber(windowOpacityPercent) })}
+                  onChange={(event) => onWindowOpacityChange(Number(event.target.value) / 100)}
+                />
+                <output htmlFor="settings-window-opacity">
+                  {t("settings.windowOpacityValue", { percent: formatNumber(windowOpacityPercent) })}
+                </output>
+              </span>
+            </label>
+            <label className="settings-toggle-row" htmlFor="settings-always-on-top">
+              <span><strong>{t("settings.alwaysOnTop")}</strong><small>{t("settings.alwaysOnTopDescription")}</small></span>
+              <input
+                id="settings-always-on-top"
+                type="checkbox"
+                checked={alwaysOnTop}
+                aria-label={t("settings.alwaysOnTop")}
+                onChange={(event) => onAlwaysOnTopChange(event.target.checked)}
+              />
             </label>
           </fieldset>
 

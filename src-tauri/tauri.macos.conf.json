@@ -4,7 +4,8 @@
     "targets": ["dmg"],
     "resources": [
       "resources/ffmpeg",
-      "resources/FFMPEG_LICENSE.txt"
+      "resources/FFMPEG_BUILD_INFO.json",
+      "resources/FFMPEG_LICENSES/"
     ],
     "macOS": {
       "minimumSystemVersion": "11.0"

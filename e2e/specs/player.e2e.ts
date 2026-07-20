@@ -11,6 +11,17 @@ describe("Sylloop Windows application", () => {
   it("starts with the expected empty state and bundled analyzer", async () => {
     await expect($("h1")).toHaveText("Sylloop");
 
+    const emptyPin = $(".empty-window-actions .window-pin-button");
+    await expect(emptyPin).toBeDisplayed();
+    if ((await emptyPin.getAttribute("aria-pressed")) === "true") await emptyPin.click();
+    await expect(emptyPin).toHaveAttribute("aria-pressed", "false");
+    await emptyPin.click();
+    await expect(emptyPin).toHaveAttribute("aria-pressed", "true");
+    await emptyPin.click();
+    await expect(emptyPin).toHaveAttribute("aria-pressed", "false");
+    await browser.pause(150);
+    expect(await $$(".error-toast").length).toBe(0);
+
     const capability = await browser.tauri.execute(({ core }) =>
       core.invoke<{ available: boolean; source: string; version: string | null }>("get_analysis_capability"),
     );
@@ -60,6 +71,32 @@ describe("Sylloop Windows application", () => {
         timeoutMsg: `Settings did not show application version ${appConfig.version}`,
       },
     );
+
+    const opacity = $("#settings-window-opacity");
+    const alwaysOnTop = $("#settings-always-on-top");
+    await expect(opacity).toBeDisplayed();
+    await browser.execute(() => {
+      const input = document.querySelector<HTMLInputElement>("#settings-window-opacity");
+      if (!input) throw new Error("Window opacity control is unavailable");
+      input.value = "40";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await expect(opacity).toHaveValue("40");
+    await alwaysOnTop.click();
+    await expect($(".top-actions .window-pin-button")).toHaveAttribute("aria-pressed", "true");
+    await alwaysOnTop.click();
+    await expect($(".top-actions .window-pin-button")).toHaveAttribute("aria-pressed", "false");
+    await browser.execute(() => {
+      const input = document.querySelector<HTMLInputElement>("#settings-window-opacity");
+      if (!input) throw new Error("Window opacity control is unavailable");
+      input.value = "100";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await expect(opacity).toHaveValue("100");
+    await browser.pause(150);
+    expect(await $$(".error-toast").length).toBe(0);
     await $(".settings-modal-header button").click();
     await expect($(".settings-modal")).not.toBeDisplayed();
   });

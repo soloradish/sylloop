@@ -1,10 +1,54 @@
 {
-  "version": "8.1.2-21-gce3c09c101",
-  "releaseTag": "autobuild-2026-06-30-13-34",
-  "archiveName": "ffmpeg-n8.1.2-21-gce3c09c101-win64-lgpl-8.1.zip",
-  "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-06-30-13-34/ffmpeg-n8.1.2-21-gce3c09c101-win64-lgpl-8.1.zip",
-  "sha256": "3b9eceb438016b647e0755a51ce3a388cd4ed5679e2427cb83a01e1ae2cd0eba",
-  "sourceUrl": "https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz",
-  "sourceSha256": "464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c",
-  "buildSource": "https://github.com/BtbN/FFmpeg-Builds/tree/1f74efe"
+  "schemaVersion": 1,
+  "repository": "soloradish/ffmpeg-dist",
+  "releaseTag": "v8.1.2-r1",
+  "ffmpegVersion": "8.1.2",
+  "distributionRevision": 1,
+  "profile": "core",
+  "license": "LGPL-2.1-or-later",
+  "source": {
+    "archiveName": "ffmpeg-8.1.2-r1-sources.tar.xz",
+    "url": "https://github.com/soloradish/ffmpeg-dist/releases/download/v8.1.2-r1/ffmpeg-8.1.2-r1-sources.tar.xz",
+    "sha256": "35f6152d790cf1a7d4ee71ac8a94f88d7963dae0149e0a0eb1e2dc66897621f3",
+    "upstreamUrl": "https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz",
+    "upstreamSha256": "464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c"
+  },
+  "build": {
+    "url": "https://github.com/soloradish/ffmpeg-dist/tree/85836456c517da1ec07d95fc30e047e53673951f",
+    "commit": "85836456c517da1ec07d95fc30e047e53673951f"
+  },
+  "licenseFiles": [
+    "FFmpeg-COPYING.LGPLv2.1",
+    "FFmpeg-COPYING.LGPLv3",
+    "FFmpeg-LICENSE.md"
+  ],
+  "assets": {
+    "windows-x86_64": {
+      "target": "windows-x86_64",
+      "architecture": "x86_64",
+      "archiveFormat": "zip",
+      "archiveName": "ffmpeg-8.1.2-r1-core-windows-x86_64.zip",
+      "packageDirectory": "ffmpeg-8.1.2-r1-core-windows-x86_64",
+      "url": "https://github.com/soloradish/ffmpeg-dist/releases/download/v8.1.2-r1/ffmpeg-8.1.2-r1-core-windows-x86_64.zip",
+      "sha256": "863d9fa6eb3aff1fb0008666c7540661ab82f8dc68dc51032da857dea2bfb2ba"
+    },
+    "macos-aarch64": {
+      "target": "macos-aarch64",
+      "architecture": "aarch64",
+      "archiveFormat": "tar.xz",
+      "archiveName": "ffmpeg-8.1.2-r1-core-macos-aarch64.tar.xz",
+      "packageDirectory": "ffmpeg-8.1.2-r1-core-macos-aarch64",
+      "url": "https://github.com/soloradish/ffmpeg-dist/releases/download/v8.1.2-r1/ffmpeg-8.1.2-r1-core-macos-aarch64.tar.xz",
+      "sha256": "7f38946f2b2a3e86f090e823adb2418960076ff1ab082e32dc0262ab518072ba"
+    },
+    "macos-x86_64": {
+      "target": "macos-x86_64",
+      "architecture": "x86_64",
+      "archiveFormat": "tar.xz",
+      "archiveName": "ffmpeg-8.1.2-r1-core-macos-x86_64.tar.xz",
+      "packageDirectory": "ffmpeg-8.1.2-r1-core-macos-x86_64",
+      "url": "https://github.com/soloradish/ffmpeg-dist/releases/download/v8.1.2-r1/ffmpeg-8.1.2-r1-core-macos-x86_64.tar.xz",
+      "sha256": "64c5b59351e2a50de5d212c934c169fcaedf4c5d53d7a813ffb6a90d68b048fc"
+    }
+  }
 }

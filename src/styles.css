@@ -17,7 +17,8 @@ button { color: inherit; }
     radial-gradient(circle at 50% 36%, rgba(181, 225, 118, 0.13), transparent 28%),
     radial-gradient(circle at 20% 95%, rgba(151, 193, 104, 0.09), transparent 30%), #111310;
 }
-.empty-help-button { position: absolute; top: 18px; right: 18px; min-height: 34px; padding: 6px 11px; border: 1px solid #30362c; border-radius: 9px; background: transparent; color: #b8c0b2; cursor: pointer; font-size: 12px; }
+.empty-window-actions { position: absolute; top: 18px; right: 18px; display: flex; align-items: center; gap: 6px; }
+.empty-help-button { min-height: 34px; padding: 6px 11px; border: 1px solid #30362c; border-radius: 9px; background: transparent; color: #b8c0b2; cursor: pointer; font-size: 12px; }
 .empty-help-button:hover { border-color: #53604c; color: #f1f5ed; }
 .brand-mark { width: 70px; height: 70px; display: grid; place-items: center; border-radius: 22px; background: #d9f99d; color: #1a2514; box-shadow: 0 18px 60px rgba(190, 240, 112, .16); }
 .brand-mark svg { width: 58px; height: 58px; fill: currentColor; }
@@ -41,6 +42,10 @@ button { color: inherit; }
 .top-actions button { white-space: nowrap; }
 .top-actions button:hover { border-color: #53604c; color: #f1f5ed; }
 .top-actions button.active { color: #d9f99d; border-color: #667b54; background: #273020; }
+.top-actions .window-pin-button, .empty-window-actions .window-pin-button { width: 34px; height: 34px; display: grid; flex: 0 0 auto; place-items: center; padding: 0; border: 1px solid #30362c; border-radius: 9px; background: transparent; color: #b8c0b2; cursor: pointer; }
+.top-actions .window-pin-button:hover, .empty-window-actions .window-pin-button:hover { border-color: #53604c; color: #f1f5ed; }
+.top-actions .window-pin-button.active, .empty-window-actions .window-pin-button.active { border-color: #667b54; background: #273020; color: #d9f99d; }
+.pin-icon { display: block; }
 
 .media-stage { min-height: 0; position: relative; display: flex; justify-content: center; align-items: center; background: #080907; overflow: hidden; }
 .media-stage.audio-only { background: radial-gradient(circle at 50% 42%, #273020 0, #141712 38%, #0d0f0c 75%); }
@@ -185,6 +190,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .settings-group label > span:first-child { min-width: 0; display: grid; gap: 2px; }
 .settings-group strong { color: #dce5d5; font-size: 13px; font-weight: 600; }
 .settings-group small { color: #74806c; font-size: 10px; line-height: 1.35; }
+.settings-window-group { display: grid; gap: 12px; }
+.settings-opacity-control { display: grid; grid-template-columns: 132px 42px; align-items: center; gap: 8px; }
+.settings-opacity-control input[type="range"] { width: 132px; }
+.settings-opacity-control output { color: #cbd5c4; font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; }
+.settings-group > .settings-toggle-row { padding-top: 10px; border-top: 1px solid #2b3227; }
+.settings-toggle-row input[type="checkbox"] { width: 17px; height: 17px; margin: 0; accent-color: #c9ec91; cursor: pointer; }
 .settings-group select { min-width: 104px; }
 .settings-group #settings-language { min-width: 136px; }
 .settings-shortcut-group > p { margin: 0 0 8px; color: #74806c; font-size: 10px; line-height: 1.4; }
@@ -276,6 +287,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   .open-file-button { padding-inline: 8px; }
   .top-actions { gap: 3px; }
   .top-actions button { padding-inline: 8px; }
+  .top-actions .window-pin-button { padding: 0; }
   .playlist-scrim { inset-block-start: 50px; }
   .playlist-drawer { top: 50px; }
   .learning-dock { padding-inline: 10px; }

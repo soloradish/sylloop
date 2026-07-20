@@ -26,6 +26,8 @@ const PROGRESS_INTERVAL: Duration = Duration::from_millis(100);
 const FFMPEG_STDERR_LIMIT: usize = 64 * 1024;
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+const MIN_WINDOW_OPACITY: f64 = 0.4;
+const MAX_WINDOW_OPACITY: f64 = 1.0;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -82,6 +84,107 @@ impl CommandError {
             detail: Some(detail.into()),
         }
     }
+}
+
+fn validate_window_opacity(opacity: f64) -> Result<f64, CommandError> {
+    if opacity.is_finite() && (MIN_WINDOW_OPACITY..=MAX_WINDOW_OPACITY).contains(&opacity) {
+        Ok(opacity)
+    } else {
+        Err(CommandError::new("invalid_window_opacity"))
+    }
+}
+
+#[cfg(windows)]
+fn opacity_to_alpha(opacity: f64) -> u8 {
+    (opacity * u8::MAX as f64).round() as u8
+}
+
+#[cfg(windows)]
+fn apply_window_opacity(window: &tauri::Window, opacity: f64) -> Result<(), CommandError> {
+    use windows::Win32::{
+        Foundation::{GetLastError, SetLastError, COLORREF, WIN32_ERROR},
+        UI::WindowsAndMessaging::{
+            GetWindowLongPtrW, SetLayeredWindowAttributes, SetWindowLongPtrW, GWL_EXSTYLE,
+            LWA_ALPHA, WS_EX_LAYERED,
+        },
+    };
+
+    let hwnd = window
+        .hwnd()
+        .map_err(|error| CommandError::with_detail("window_opacity_failed", error.to_string()))?;
+    let alpha = opacity_to_alpha(opacity);
+
+    unsafe {
+        SetLastError(WIN32_ERROR(0));
+        let extended_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+        let style_error = GetLastError();
+        if extended_style == 0 && style_error != WIN32_ERROR(0) {
+            return Err(CommandError::with_detail(
+                "window_opacity_failed",
+                format!("Win32 error {}", style_error.0),
+            ));
+        }
+        let is_layered = extended_style & WS_EX_LAYERED.0 as isize != 0;
+
+        if alpha < u8::MAX {
+            if !is_layered {
+                SetLastError(WIN32_ERROR(0));
+                let previous_style =
+                    SetWindowLongPtrW(hwnd, GWL_EXSTYLE, extended_style | WS_EX_LAYERED.0 as isize);
+                let style_error = GetLastError();
+                if previous_style == 0 && style_error != WIN32_ERROR(0) {
+                    return Err(CommandError::with_detail(
+                        "window_opacity_failed",
+                        format!("Win32 error {}", style_error.0),
+                    ));
+                }
+            }
+            SetLayeredWindowAttributes(hwnd, COLORREF(0), alpha, LWA_ALPHA).map_err(|error| {
+                CommandError::with_detail("window_opacity_failed", error.to_string())
+            })?;
+        } else if is_layered {
+            SetLayeredWindowAttributes(hwnd, COLORREF(0), u8::MAX, LWA_ALPHA).map_err(|error| {
+                CommandError::with_detail("window_opacity_failed", error.to_string())
+            })?;
+            SetLastError(WIN32_ERROR(0));
+            let previous_style = SetWindowLongPtrW(
+                hwnd,
+                GWL_EXSTYLE,
+                extended_style & !(WS_EX_LAYERED.0 as isize),
+            );
+            let style_error = GetLastError();
+            if previous_style == 0 && style_error != WIN32_ERROR(0) {
+                return Err(CommandError::with_detail(
+                    "window_opacity_failed",
+                    format!("Win32 error {}", style_error.0),
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(target_os = "macos")]
+fn apply_window_opacity(window: &tauri::Window, opacity: f64) -> Result<(), CommandError> {
+    use objc2_app_kit::NSWindow;
+
+    let window_pointer = window
+        .ns_window()
+        .map_err(|error| CommandError::with_detail("window_opacity_failed", error.to_string()))?;
+    let ns_window = unsafe { &*window_pointer.cast::<NSWindow>() };
+    ns_window.setAlphaValue(opacity);
+    Ok(())
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
+fn apply_window_opacity(_window: &tauri::Window, _opacity: f64) -> Result<(), CommandError> {
+    Err(CommandError::new("window_opacity_unsupported"))
+}
+
+#[tauri::command]
+fn set_window_opacity(window: tauri::Window, opacity: f64) -> Result<(), CommandError> {
+    apply_window_opacity(&window, validate_window_opacity(opacity)?)
 }
 
 #[derive(Clone, Default)]
@@ -1123,7 +1226,8 @@ pub fn run() {
             get_analysis_cache_stats,
             clear_analysis_cache,
             open_media_context,
-            get_analysis_capability
+            get_analysis_capability,
+            set_window_opacity
         ])
         .run(tauri::generate_context!())
         .expect("error while running Sylloop");
@@ -1233,6 +1337,32 @@ mod tests {
             serde_json::to_value(error).unwrap(),
             serde_json::json!({ "code": "file_not_found" })
         );
+    }
+
+    #[test]
+    fn window_opacity_validation_uses_stable_bounds_and_errors() {
+        assert_eq!(validate_window_opacity(MIN_WINDOW_OPACITY).unwrap(), 0.4);
+        assert_eq!(validate_window_opacity(MAX_WINDOW_OPACITY).unwrap(), 1.0);
+        assert_eq!(
+            validate_window_opacity(0.399).unwrap_err().code,
+            "invalid_window_opacity"
+        );
+        assert_eq!(
+            validate_window_opacity(1.001).unwrap_err().code,
+            "invalid_window_opacity"
+        );
+        assert_eq!(
+            validate_window_opacity(f64::NAN).unwrap_err().code,
+            "invalid_window_opacity"
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn window_opacity_converts_to_rounded_windows_alpha() {
+        assert_eq!(opacity_to_alpha(0.4), 102);
+        assert_eq!(opacity_to_alpha(0.5), 128);
+        assert_eq!(opacity_to_alpha(1.0), 255);
     }
 
     #[test]

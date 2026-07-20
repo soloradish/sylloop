@@ -22,7 +22,8 @@ beforeAll(() => {
 beforeEach(() => {
   playMock.mockClear();
   localStorage.clear();
-  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "zh-CN", shortcuts: { ...DEFAULT_SHORTCUTS } }, error: null });
+  usePlayerStore.getState().clearMedia();
+  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, windowOpacity: 1, alwaysOnTop: false, language: "zh-CN", shortcuts: { ...DEFAULT_SHORTCUTS } }, error: null });
   window.history.pushState({}, "", "/?demo=1");
 });
 
@@ -47,7 +48,7 @@ describe("settings modal", () => {
     fireEvent.change(within(dialog).getByLabelText("段间停顿"), { target: { value: "1" } });
     fireEvent.change(within(dialog).getByLabelText("播放倍速"), { target: { value: "1.25" } });
 
-    expect(usePlayerStore.getState().preferences).toEqual({ volume: 0.85, speed: 1.25, loopGap: 1, language: "zh-CN", shortcuts: DEFAULT_SHORTCUTS });
+    expect(usePlayerStore.getState().preferences).toEqual({ volume: 0.85, speed: 1.25, loopGap: 1, windowOpacity: 1, alwaysOnTop: false, language: "zh-CN", shortcuts: DEFAULT_SHORTCUTS });
     expect((document.querySelector("video") as HTMLVideoElement).playbackRate).toBe(1.25);
     expect(JSON.parse(localStorage.getItem("sylloop-preferences") ?? "{}")).toMatchObject({ speed: 1.25, loopGap: 1 });
 
@@ -94,9 +95,49 @@ describe("settings modal", () => {
     usePlayerStore.setState({ preferences: loadPlayerPreferences(localStorage, ["zh-CN"]) });
     render(<App />);
 
-    expect(usePlayerStore.getState().preferences).toEqual({ volume: 0.4, speed: 1.5, loopGap: 0, language: "zh-CN", shortcuts: DEFAULT_SHORTCUTS });
+    expect(usePlayerStore.getState().preferences).toEqual({ volume: 0.4, speed: 1.5, loopGap: 0, windowOpacity: 1, alwaysOnTop: false, language: "zh-CN", shortcuts: DEFAULT_SHORTCUTS });
     fireEvent.click(screen.getByRole("button", { name: "设置" }));
     expect((screen.getByLabelText("段间停顿") as HTMLSelectElement).value).toBe("0");
+  });
+
+  it("keeps the top pin and window settings synchronized", () => {
+    render(<App />);
+    const pin = screen.getByRole("button", { name: "始终置顶" });
+    expect(pin.getAttribute("aria-pressed")).toBe("false");
+    expect(within(pin).getByTestId("pin-icon-outline")).toBeTruthy();
+
+    fireEvent.click(pin);
+    expect(pin.getAttribute("aria-pressed")).toBe("true");
+    expect(within(pin).getByTestId("pin-icon-filled")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "设置" }));
+    const dialog = screen.getByRole("dialog", { name: "设置" });
+    const alwaysOnTop = within(dialog).getByRole("checkbox", { name: "始终置顶" }) as HTMLInputElement;
+    expect(alwaysOnTop.checked).toBe(true);
+
+    const opacity = within(dialog).getByRole("slider", { name: "窗口透明度" }) as HTMLInputElement;
+    fireEvent.change(opacity, { target: { value: "65" } });
+    expect(usePlayerStore.getState().preferences.windowOpacity).toBe(0.65);
+    expect(within(dialog).getByText("65%")).toBeTruthy();
+
+    fireEvent.click(alwaysOnTop);
+    expect(pin.getAttribute("aria-pressed")).toBe("false");
+    expect(JSON.parse(localStorage.getItem("sylloop-preferences") ?? "{}")).toMatchObject({
+      windowOpacity: 0.65,
+      alwaysOnTop: false,
+    });
+  });
+
+  it("exposes the top pin before media is opened", () => {
+    window.history.pushState({}, "", "/");
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: "Sylloop" })).toBeTruthy();
+    const pin = screen.getByRole("button", { name: "始终置顶" });
+    fireEvent.click(pin);
+    expect(pin.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(pin);
+    expect(pin.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("records core shortcuts, rejects conflicts, and restores every preference default", () => {
@@ -123,12 +164,16 @@ describe("settings modal", () => {
 
     fireEvent.change(screen.getByLabelText("段间停顿"), { target: { value: "2" } });
     fireEvent.change(screen.getByLabelText("播放倍速"), { target: { value: "1.5" } });
+    fireEvent.change(screen.getByLabelText("窗口透明度"), { target: { value: "55" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "始终置顶" }));
     fireEvent.click(screen.getByRole("button", { name: "还原默认" }));
 
     expect(usePlayerStore.getState().preferences).toEqual({
       volume: 0.85,
       speed: 1,
       loopGap: 0,
+      windowOpacity: 1,
+      alwaysOnTop: false,
       language: "en",
       shortcuts: DEFAULT_SHORTCUTS,
     });

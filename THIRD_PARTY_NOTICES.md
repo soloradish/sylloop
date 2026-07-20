@@ -4,12 +4,12 @@ Sylloop is distributed under the MIT License and includes third-party components
 
 ## FFmpeg
 
-Windows packages include an unmodified FFmpeg executable from the BtbN FFmpeg Builds project. The pinned artifact and SHA-256 checksum are recorded in `scripts/ffmpeg-lock.json`. The build is verified to be LGPL-only before packaging, and its license text is included beside the executable as `FFMPEG_LICENSE.txt`.
+Windows, Apple Silicon, and Intel macOS packages include unmodified `core`-profile FFmpeg executables produced by the independent, unofficial [soloradish/ffmpeg-dist](https://github.com/soloradish/ffmpeg-dist) distribution. The pinned release, architecture-specific artifacts, build provenance, and SHA-256 checksums are recorded in `scripts/ffmpeg-lock.json`. Each build is verified as `LGPL-2.1-or-later`, with networking, GPL, nonfree, and version3 components disabled. Its complete `LICENSES/` directory and `BUILD-INFO.json` are included in the application resources.
 
-macOS packages include an FFmpeg executable built on the matching Apple Silicon or Intel runner from the pinned official source release. The source archive SHA-256 is locked, the build explicitly disables GPL and nonfree components, and CI verifies the resulting build configuration before packaging.
-
-- FFmpeg source: https://ffmpeg.org/download.html
-- Build source and scripts: https://github.com/BtbN/FFmpeg-Builds
+- Distribution release: https://github.com/soloradish/ffmpeg-dist/releases/tag/v8.1.2-r1
+- Exact corresponding-source bundle: https://github.com/soloradish/ffmpeg-dist/releases/download/v8.1.2-r1/ffmpeg-8.1.2-r1-sources.tar.xz
+- Build source and scripts: https://github.com/soloradish/ffmpeg-dist/tree/85836456c517da1ec07d95fc30e047e53673951f
+- Upstream FFmpeg source: https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz
 - License information: https://ffmpeg.org/legal.html
 
 Replacement is supported by setting `FFMPEG_PATH` to a compatible FFmpeg executable when running from source. Official packages use the bundled executable by default.

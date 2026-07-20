@@ -3,71 +3,84 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 lock="$root/scripts/ffmpeg-lock.json"
-version="$(node -e 'const value=require(process.argv[1]); process.stdout.write(value.sourceUrl.match(/ffmpeg-([0-9.]+)\.tar\.xz$/)[1])' "$lock")"
-url="$(node -e 'process.stdout.write(require(process.argv[1]).sourceUrl)' "$lock")"
-expected_sha="$(node -e 'process.stdout.write(require(process.argv[1]).sourceSha256)' "$lock")"
 arch="$(uname -m)"
 
 case "$arch" in
-  arm64) target="aarch64-apple-darwin" ;;
-  x86_64) target="x86_64-apple-darwin" ;;
+  arm64) target="macos-aarch64"; file_arch="arm64" ;;
+  x86_64) target="macos-x86_64"; file_arch="x86_64" ;;
   *) echo "Unsupported macOS architecture: $arch" >&2; exit 1 ;;
 esac
 
+IFS=$'\t' read -r archive_name package_directory url expected_sha < <(
+  node -e '
+    const lock = require(process.argv[1]);
+    const asset = lock.assets[process.argv[2]];
+    if (!asset) throw new Error(`Missing FFmpeg asset for ${process.argv[2]}`);
+    process.stdout.write(`${[asset.archiveName, asset.packageDirectory, asset.url, asset.sha256].join("\t")}\n`);
+  ' "$lock" "$target"
+)
+
 cache="$root/src-tauri/.cache/ffmpeg/$target"
-archive="$cache/ffmpeg-$version.tar.xz"
-source="$cache/ffmpeg-$version"
-output="$root/src-tauri/resources/ffmpeg"
-license="$root/src-tauri/resources/FFMPEG_LICENSE.txt"
-mkdir -p "$cache" "$root/src-tauri/resources"
+archive="$cache/$archive_name"
+expanded="$cache/expanded"
+resources="$root/src-tauri/resources"
+output="$resources/ffmpeg"
+build_info_output="$resources/FFMPEG_BUILD_INFO.json"
+licenses_output="$resources/FFMPEG_LICENSES"
+legacy_license="$resources/FFMPEG_LICENSE.txt"
+mkdir -p "$cache" "$resources"
 
 if [[ ! -f "$archive" ]]; then
   curl --fail --location --retry 3 "$url" --output "$archive"
 fi
 actual_sha="$(shasum -a 256 "$archive" | awk '{print $1}')"
 if [[ "$actual_sha" != "$expected_sha" ]]; then
-  echo "FFmpeg source SHA-256 mismatch: expected $expected_sha, got $actual_sha" >&2
+  echo "FFmpeg archive SHA-256 mismatch: expected $expected_sha, got $actual_sha" >&2
   exit 1
 fi
 
-if [[ ! -x "$cache/ffmpeg" ]]; then
-  rm -rf "$source"
-  tar -xJf "$archive" -C "$cache"
-  pushd "$source" >/dev/null
-  ./configure \
-    --disable-debug \
-    --disable-doc \
-    --disable-ffplay \
-    --disable-ffprobe \
-    --disable-devices \
-    --disable-network \
-    --disable-autodetect \
-    --disable-gpl \
-    --disable-nonfree \
-    --disable-shared \
-    --enable-static \
-    --disable-x86asm
-  make -j"$(sysctl -n hw.logicalcpu)" ffmpeg
-  cp ffmpeg "$cache/ffmpeg"
-  popd >/dev/null
+stage_required=false
+if [[ ! -x "$output" || ! -f "$build_info_output" || ! -d "$licenses_output" ]]; then
+  stage_required=true
+elif ! node "$root/scripts/verify-ffmpeg-resource.mjs" \
+    --directory "$resources" --layout resource --target "$target" >/dev/null 2>&1; then
+  echo "Restaging FFmpeg because the packaged resources do not match the lock."
+  stage_required=true
 fi
 
-cp "$cache/ffmpeg" "$output"
-cp "$source/COPYING.LGPLv2.1" "$license"
-chmod 755 "$output"
+if [[ "$stage_required" == true ]]; then
+  rm -rf "$expanded"
+  mkdir -p "$expanded"
+  tar -xJf "$archive" -C "$expanded"
 
-version_output="$($output -version 2>&1)"
-buildconf_output="$($output -buildconf 2>&1)"
-[[ "$version_output" == ffmpeg\ version\ "$version"* ]] || { echo "Unexpected FFmpeg version" >&2; exit 1; }
-[[ "$buildconf_output" != *"--enable-gpl"* && "$buildconf_output" != *"--enable-nonfree"* ]] || {
-  echo "FFmpeg build enables GPL or nonfree components" >&2
-  exit 1
-}
-file "$output" | grep -q "$arch" || { echo "FFmpeg architecture does not match $arch" >&2; exit 1; }
-unexpected_libraries="$(otool -L "$output" | tail -n +2 | grep -vE '^[[:space:]]+(/usr/lib/|/System/Library/)' || true)"
-[[ -z "$unexpected_libraries" ]] || {
-  echo "FFmpeg links unexpected non-system libraries:" >&2
-  echo "$unexpected_libraries" >&2
-  exit 1
-}
-echo "Prepared FFmpeg $version for $target"
+  top_level_count="$(find "$expanded" -mindepth 1 -maxdepth 1 -print | wc -l | tr -d ' ')"
+  top_level_entry="$(find "$expanded" -mindepth 1 -maxdepth 1 -print | sed -n '1p')"
+  if [[ "$top_level_count" != "1" || "$(basename "$top_level_entry")" != "$package_directory" ]]; then
+    echo "The pinned archive must contain only the expected '$package_directory' package directory." >&2
+    exit 1
+  fi
+
+  package_root="$expanded/$package_directory"
+  node "$root/scripts/verify-ffmpeg-resource.mjs" \
+    --directory "$package_root" --layout package --target "$target"
+  file "$package_root/bin/ffmpeg" | grep -q "$file_arch" || {
+    echo "FFmpeg architecture does not match $arch" >&2
+    exit 1
+  }
+  unexpected_libraries="$(otool -L "$package_root/bin/ffmpeg" | tail -n +2 | grep -vE '^[[:space:]]+(/usr/lib/|/System/Library/)' || true)"
+  if [[ -n "$unexpected_libraries" ]]; then
+    echo "FFmpeg links unexpected non-system libraries:" >&2
+    echo "$unexpected_libraries" >&2
+    exit 1
+  fi
+
+  cp "$package_root/bin/ffmpeg" "$output"
+  cp "$package_root/BUILD-INFO.json" "$build_info_output"
+  rm -rf "$licenses_output"
+  cp -R "$package_root/LICENSES" "$licenses_output"
+  chmod 755 "$output"
+fi
+
+rm -f "$legacy_license"
+node "$root/scripts/verify-ffmpeg-resource.mjs" \
+  --directory "$resources" --layout resource --target "$target"

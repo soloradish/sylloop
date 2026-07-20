@@ -209,8 +209,8 @@ jobs:
         run: npm run tauri:build
       - name: Verify bundled FFmpeg and DMG
         run: |
-          test -x src-tauri/resources/ffmpeg
-          src-tauri/resources/ffmpeg -version | head -n 1 | grep 'ffmpeg version 8.1.2'
+          if [[ "$(uname -m)" == "arm64" ]]; then target="macos-aarch64"; else target="macos-x86_64"; fi
+          node scripts/verify-ffmpeg-resource.mjs --directory src-tauri/resources --layout resource --target "$target"
           test "$(find src-tauri/target/release/bundle/dmg -name '*.dmg' | wc -l | tr -d ' ')" = "1"
       - name: Save pinned FFmpeg
         if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && steps.macos-ffmpeg-cache.outputs.cache-hit != 'true'

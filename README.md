@@ -19,12 +19,13 @@ Sylloop is a Windows and macOS desktop media player built for language-learning 
 - Generate waveforms and pause-based segments with the bundled FFmpeg analyzer.
 - Replay the current segment with preroll, move between segments, loop a segment or the full media, and create waveform A-B loops.
 - Customize core playback shortcuts for play/pause, previous or next speech segment, replay, and loop-range switching.
-- Adjust playback speed from 0.5x to 2.0x, volume, fullscreen mode, and the pause between loop iterations.
-- Restore playback, language, and keyboard preferences to their defaults from Settings.
+- Adjust playback speed from 0.5x to 2.0x, volume, fullscreen mode, window opacity, always-on-top behavior, and the pause between loop iterations.
+- Pin the player above a PDF from the top bar, or configure opacity and window behavior from Settings.
+- Restore playback, window, language, and keyboard preferences to their defaults from Settings.
 - Open another file from an explicit top-bar action, and use Help to report a problem, suggest an improvement, or visit the project page.
 - Use the interface in English, Simplified Chinese, Traditional Chinese, or French.
 
-Playlist discovery is intentionally non-recursive. Reaching the end of a media file stops playback instead of advancing automatically. Across launches, the application retains only volume, speed, loop-gap, language, and keyboard-shortcut preferences.
+Playlist discovery is intentionally non-recursive. Reaching the end of a media file stops playback instead of advancing automatically. Across launches, the application retains only volume, speed, loop-gap, window opacity, always-on-top, language, and keyboard-shortcut preferences.
 
 ## Requirements
 
@@ -34,7 +35,7 @@ Playlist discovery is intentionally non-recursive. Reaching the end of a media f
 - Microsoft Edge WebView2 Runtime, which is normally included with supported Windows versions
 - macOS 11 or later on Apple Silicon or Intel
 
-Official packages include a pinned LGPL FFmpeg executable. They are currently unsigned: Windows may display a SmartScreen warning, and macOS may initially block the app. On macOS, Control-click Sylloop in Finder and choose **Open** to confirm that you trust the downloaded app. Obtain packages from [GitHub Releases](https://github.com/soloradish/sylloop/releases) and verify them with the published `SHA256SUMS.txt`.
+Official packages include a pinned LGPL FFmpeg executable. They are currently unsigned: Windows may display a SmartScreen warning, and macOS may initially block the app. On macOS, Control-click Sylloop in Finder and choose **Open** to confirm that you trust the downloaded app. Obtain packages from [GitHub Releases](https://github.com/soloradish/sylloop/releases), verify them with the published `SHA256SUMS.txt`, and use the [exact FFmpeg corresponding-source bundle](https://github.com/soloradish/ffmpeg-dist/releases/download/v8.1.2-r1/ffmpeg-8.1.2-r1-sources.tar.xz) when rebuilding the bundled analyzer.
 
 ### Developing the application
 
@@ -103,7 +104,7 @@ npm ci
 npm run ffmpeg:prepare
 ```
 
-The FFmpeg preparation script downloads the locked Windows artifact or official macOS source release, verifies its SHA-256 digest, and rejects GPL or nonfree builds.
+The FFmpeg preparation script downloads the exact platform and architecture-specific `soloradish/ffmpeg-dist` artifact recorded in `scripts/ffmpeg-lock.json`, verifies its SHA-256 digest, build metadata, architecture, and `core` profile, and rejects GPL, nonfree, version3, or network-enabled builds.
 
 Start the native Tauri development application:
 
@@ -189,11 +190,11 @@ cargo audit
 
 ## FFmpeg, cache, and application permissions
 
-Windows packages contain an unmodified, pinned LGPL build from BtbN FFmpeg Builds. macOS packages contain an LGPL-only executable built on the matching architecture from the pinned official FFmpeg source release. The source and artifact URLs, versions, and expected checksums are recorded in `scripts/ffmpeg-lock.json`. Developers can point source builds at a compatible executable through `FFMPEG_PATH`; official packages use the bundled executable.
+The Windows, Apple Silicon, and Intel macOS packages contain unmodified, pinned `core` builds from the independent, unofficial [soloradish/ffmpeg-dist](https://github.com/soloradish/ffmpeg-dist) distribution. The exact release, architecture-specific artifact URLs, corresponding-source bundle, build provenance, version, and expected checksums are recorded in `scripts/ffmpeg-lock.json`. Preparation verifies the archive, `BUILD-INFO.json`, executable architecture, version, and LGPL-compatible profile, then packages the complete license directory. Developers can point source builds at a compatible executable through `FFMPEG_PATH`; official packages use the bundled executable.
 
 Analysis results use a versioned cache in the application data directory. The settings dialog reports cache usage and can clear it when no analysis is active.
 
-The main Tauri capability grants only application-version reads, event listen/unlisten, file-dialog access, and opening explicitly allowlisted support URLs. Media files become available to the asset protocol only after the Rust backend has canonicalized and accepted them. Changes to capabilities, the content security policy, asset scope, or file validation should be treated as cross-boundary changes and tested accordingly.
+The main Tauri capability grants only application-version reads, event listen/unlisten, always-on-top changes for the main window, file-dialog access, and opening explicitly allowlisted support URLs. Media files become available to the asset protocol only after the Rust backend has canonicalized and accepted them. Changes to capabilities, the content security policy, asset scope, or file validation should be treated as cross-boundary changes and tested accordingly.
 
 ## Release process
 

@@ -4,6 +4,9 @@ All notable changes to Sylloop are documented here.
 
 ## [Unreleased]
 
+- Switched the bundled analyzer on Windows and macOS to pinned `core` builds from `soloradish/ffmpeg-dist`, including exact build metadata and complete FFmpeg license files.
+- Added persisted whole-window opacity, always-on-top settings, and a top-bar pin for keeping Sylloop visible above documents.
+
 ## [0.4.0] - 2026-07-17
 
 - Added official unsigned macOS 11+ DMGs for Apple Silicon and Intel, including bundled LGPL FFmpeg builds and native release smoke tests.

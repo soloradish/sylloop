@@ -9,6 +9,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { BrandMark } from "./components/BrandMark";
 import { HelpModal } from "./components/HelpModal";
 import { AnalysisProgress } from "./components/AnalysisProgress";
+import { PinIcon } from "./components/PinIcon";
 import { ERROR_MESSAGE_KEYS, I18nProvider, useI18n } from "./i18n";
 import { currentSegmentIndex, formatTime } from "./lib/segments";
 import { sortPlaylist } from "./lib/playlist";
@@ -16,7 +17,7 @@ import { formatShortcut, shortcutActionForEvent } from "./lib/shortcuts";
 import { openExternalUrl, projectUrlForLocale } from "./lib/externalLinks";
 import { MEDIA_EXTENSIONS, isSupportedMediaPath, isVideoPath } from "./mediaFormats";
 import { PREFERENCES_STORAGE_KEY, usePlayerStore } from "./store";
-import type { AnalysisEvent, AppError, CacheStats, LoopState, MediaContext, PlaylistItem, Segment, WaveformData } from "./types";
+import type { AnalysisEvent, AppError, CacheStats, LoopState, MediaContext, PlayerPreferences, PlaylistItem, Segment, WaveformData } from "./types";
 
 interface Selection {
   start: number;
@@ -37,6 +38,16 @@ interface SelectionLoopSession {
 
 type OpenSource = "new" | "playlist";
 type StandardLoopMode = "segment" | "media";
+type WindowAppearancePreferences = Pick<PlayerPreferences, "windowOpacity" | "alwaysOnTop">;
+
+const DEFAULT_WINDOW_APPEARANCE: WindowAppearancePreferences = {
+  windowOpacity: 1,
+  alwaysOnTop: false,
+};
+
+function sameWindowAppearance(left: WindowAppearancePreferences, right: WindowAppearancePreferences): boolean {
+  return left.windowOpacity === right.windowOpacity && left.alwaysOnTop === right.alwaysOnTop;
+}
 
 let requestSequence = 0;
 
@@ -89,6 +100,8 @@ function PlayerApp() {
   const mediaOpenTokenRef = useRef(0);
   const playlistRequestTokenRef = useRef(0);
   const ownedBrowserUrlRef = useRef<string | null>(null);
+  const windowAppearanceQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const lastAppliedWindowAppearanceRef = useRef<WindowAppearancePreferences>(DEFAULT_WINDOW_APPEARANCE);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [selectionLoopSession, setSelectionLoopSession] = useState<SelectionLoopSession | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -111,6 +124,35 @@ function PlayerApp() {
       .catch(() => { if (active) setAppVersion(null); });
     return () => { active = false; };
   }, [runningInTauri]);
+
+  useEffect(() => {
+    if (!runningInTauri) return;
+    const desired: WindowAppearancePreferences = {
+      windowOpacity: store.preferences.windowOpacity,
+      alwaysOnTop: store.preferences.alwaysOnTop,
+    };
+
+    windowAppearanceQueueRef.current = windowAppearanceQueueRef.current.then(async () => {
+      try {
+        await invoke("set_window_opacity", { opacity: desired.windowOpacity });
+        await getCurrentWebviewWindow().setAlwaysOnTop(desired.alwaysOnTop);
+        lastAppliedWindowAppearanceRef.current = desired;
+      } catch (error) {
+        const actions = usePlayerStore.getState();
+        const current: WindowAppearancePreferences = {
+          windowOpacity: actions.preferences.windowOpacity,
+          alwaysOnTop: actions.preferences.alwaysOnTop,
+        };
+        if (sameWindowAppearance(current, desired)) {
+          actions.setPreferences(lastAppliedWindowAppearanceRef.current);
+        }
+        const normalized = normalizeCommandError(error);
+        actions.setError(normalized.code === "unknown"
+          ? { code: "window_appearance_failed", detail: normalized.detail }
+          : normalized);
+      }
+    });
+  }, [runningInTauri, store.preferences.alwaysOnTop, store.preferences.windowOpacity]);
 
   const activeSegment = useMemo(
     () => currentSegmentIndex(store.segments, store.currentTime),
@@ -490,6 +532,11 @@ function PlayerApp() {
     }
   }, []);
 
+  const toggleAlwaysOnTop = useCallback(() => {
+    const actions = usePlayerStore.getState();
+    actions.setPreferences({ alwaysOnTop: !actions.preferences.alwaysOnTop });
+  }, []);
+
   const updateLoopGap = useCallback((gap: number) => {
     const actions = usePlayerStore.getState();
     actions.setPreferences({ loopGap: gap });
@@ -685,13 +732,28 @@ function PlayerApp() {
       <button onClick={() => store.setError(null)} aria-label={t("error.dismiss")}>×</button>
     </div>
   ) : null;
+  const pinButton = (
+    <button
+      type="button"
+      className={store.preferences.alwaysOnTop ? "window-pin-button active" : "window-pin-button"}
+      aria-label={t("top.alwaysOnTop")}
+      aria-pressed={store.preferences.alwaysOnTop}
+      title={store.preferences.alwaysOnTop ? t("top.unpinWindow") : t("top.pinWindow")}
+      onClick={toggleAlwaysOnTop}
+    >
+      <PinIcon pinned={store.preferences.alwaysOnTop} />
+    </button>
+  );
 
   if (!store.mediaPath) {
     return (
       <main className="empty-shell">
-        <button ref={helpButtonRef} className="empty-help-button" onClick={() => setHelpOpen(true)} aria-haspopup="dialog" aria-expanded={helpOpen}>
-          {t("top.help")}
-        </button>
+        <div className="empty-window-actions">
+          {pinButton}
+          <button ref={helpButtonRef} className="empty-help-button" onClick={() => setHelpOpen(true)} aria-haspopup="dialog" aria-expanded={helpOpen}>
+            {t("top.help")}
+          </button>
+        </div>
         <BrandMark />
         <h1>Sylloop</h1>
         <p>{t("empty.tagline")}</p>
@@ -769,6 +831,7 @@ function PlayerApp() {
           >
             {t("top.settings")}
           </button>
+          {pinButton}
           <button onClick={() => void toggleFullscreen()}>{isFullscreen ? t("top.exitFullscreen") : t("top.fullscreen")}</button>
         </div>
       </header>
@@ -952,6 +1015,8 @@ function PlayerApp() {
           language={store.preferences.language}
           speed={store.preferences.speed}
           loopGap={store.preferences.loopGap}
+          windowOpacity={store.preferences.windowOpacity}
+          alwaysOnTop={store.preferences.alwaysOnTop}
           shortcuts={store.preferences.shortcuts}
           cacheStats={cacheStats}
           cacheClearing={cacheClearing}
@@ -959,6 +1024,8 @@ function PlayerApp() {
           onLanguageChange={(language) => store.setPreferences({ language })}
           onSpeedChange={(speed) => store.setPreferences({ speed })}
           onLoopGapChange={updateLoopGap}
+          onWindowOpacityChange={(windowOpacity) => store.setPreferences({ windowOpacity })}
+          onAlwaysOnTopChange={(alwaysOnTop) => store.setPreferences({ alwaysOnTop })}
           onShortcutChange={(action, shortcut) => store.setPreferences({ shortcuts: { ...store.preferences.shortcuts, [action]: shortcut } })}
           onResetPreferences={() => {
             store.resetPreferences();

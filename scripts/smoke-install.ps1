@@ -11,6 +11,8 @@ function ConvertFrom-RegistryPathValue {
   return $Value.Trim().Trim('"')
 }
 
+$ffmpegLock = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot "ffmpeg-lock.json") | ConvertFrom-Json
+$ffmpegAsset = $ffmpegLock.assets.'windows-x86_64'
 $installerPath = (Resolve-Path -LiteralPath $Installer).Path
 $installerProcess = Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait -PassThru
 if ($installerProcess.ExitCode -ne 0) {
@@ -39,6 +41,34 @@ $candidates += Join-Path $env:LOCALAPPDATA "Programs/Sylloop/sylloop.exe"
 $executable = $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -First 1
 if (-not $executable) {
   throw "The installed Sylloop executable was not found."
+}
+
+$resourceRoot = Join-Path (Split-Path -Parent $executable) "resources"
+$bundledFfmpeg = Join-Path $resourceRoot "ffmpeg.exe"
+$ffmpegBuildInfo = Join-Path $resourceRoot "FFMPEG_BUILD_INFO.json"
+$ffmpegLicenses = Join-Path $resourceRoot "FFMPEG_LICENSES"
+if (-not (Test-Path -LiteralPath $bundledFfmpeg -PathType Leaf)) {
+  throw "The installed package does not contain the bundled FFmpeg executable."
+}
+if (-not (Test-Path -LiteralPath $ffmpegBuildInfo -PathType Leaf)) {
+  throw "The installed package does not contain FFmpeg build metadata."
+}
+foreach ($licenseFile in @($ffmpegLock.licenseFiles)) {
+  if (-not (Test-Path -LiteralPath (Join-Path $ffmpegLicenses $licenseFile) -PathType Leaf)) {
+    throw "The installed package does not contain FFmpeg license file '$licenseFile'."
+  }
+}
+$buildInfo = Get-Content -Raw -Encoding UTF8 -LiteralPath $ffmpegBuildInfo | ConvertFrom-Json
+if ($buildInfo.releaseTag -cne $ffmpegLock.releaseTag -or
+    $buildInfo.ffmpegVersion -cne $ffmpegLock.ffmpegVersion -or
+    $buildInfo.profile -cne $ffmpegLock.profile -or
+    $buildInfo.target -cne $ffmpegAsset.target) {
+  throw "The installed FFmpeg build metadata does not match the pinned distribution."
+}
+$ffmpegOutput = (& $bundledFfmpeg -version 2>&1 | Out-String)
+$versionPattern = "ffmpeg version n?" + [regex]::Escape([string]$ffmpegLock.ffmpegVersion) + "(?:\s|$)"
+if ($LASTEXITCODE -ne 0 -or $ffmpegOutput -notmatch $versionPattern) {
+  throw "The installed bundled FFmpeg executable did not report version $($ffmpegLock.ffmpegVersion)."
 }
 
 $app = Start-Process -FilePath $executable -PassThru

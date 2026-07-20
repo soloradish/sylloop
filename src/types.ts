@@ -40,6 +40,8 @@ export interface PlayerPreferences {
   volume: number;
   speed: number;
   loopGap: number;
+  windowOpacity: number;
+  alwaysOnTop: boolean;
   language: AppLocale;
   shortcuts: ShortcutBindings;
 }

@@ -1,6 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+export const GENERATED_WATCH_IGNORES = [
+  "**/src-tauri/target/**",
+  "**/.cargo-target-validation/**",
+  "**/.e2e-target/**",
+  "**/e2e-results/**",
+  "**/logs/**",
+];
+
 export default defineConfig({
   plugins: [react()],
   clearScreen: false,
@@ -9,7 +17,7 @@ export default defineConfig({
     strictPort: true,
     host: "127.0.0.1",
     watch: {
-      ignored: ["**/src-tauri/target/**"],
+      ignored: GENERATED_WATCH_IGNORES,
     },
   },
   envPrefix: ["VITE_", "TAURI_ENV_*"],

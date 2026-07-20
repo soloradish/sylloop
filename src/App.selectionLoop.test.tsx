@@ -51,7 +51,7 @@ beforeEach(() => {
   playMock.mockClear();
   pauseMock.mockClear();
   localStorage.clear();
-  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "zh-CN", shortcuts: { ...DEFAULT_SHORTCUTS } } });
+  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, windowOpacity: 1, alwaysOnTop: false, language: "zh-CN", shortcuts: { ...DEFAULT_SHORTCUTS } } });
   window.history.pushState({}, "", "/?demo=1");
 });
 
