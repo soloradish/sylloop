@@ -4,6 +4,8 @@ All notable changes to Sylloop are documented here.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-07-20
+
 - Fixed downloaded macOS builds being reported as damaged by ad-hoc signing the app and bundled FFmpeg, with native signature checks in CI and release smoke tests.
 
 ## [0.5.0] - 2026-07-20
@@ -42,7 +44,8 @@ All notable changes to Sylloop are documented here.
 - Bundled a pinned LGPL FFmpeg build for offline analysis.
 - Added native Windows E2E, dependency audits, and unsigned installer smoke tests.
 
-[Unreleased]: https://github.com/soloradish/sylloop/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/soloradish/sylloop/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/soloradish/sylloop/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/soloradish/sylloop/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/soloradish/sylloop/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/soloradish/sylloop/compare/v0.2.0...v0.3.0
